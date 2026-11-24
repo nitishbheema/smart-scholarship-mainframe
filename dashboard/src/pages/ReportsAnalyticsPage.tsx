@@ -1,16 +1,13 @@
 import React, { useState } from 'react';
-import { FileText, Download, Printer, Eye, BarChart3, ScatterChart as ScatterIcon, Layers } from 'lucide-react';
+import { FileText, Download, Printer, BarChart3 } from 'lucide-react';
 import { 
   ScatterChart, 
   Scatter, 
   XAxis, 
   YAxis, 
-  ZAxis, 
   Tooltip, 
   ResponsiveContainer, 
-  CartesianGrid, 
-  BarChart, 
-  Bar 
+  CartesianGrid 
 } from 'recharts';
 import { EligibilityResult } from '../types';
 
@@ -128,17 +125,17 @@ TBAT2024101000005000007500000HASH982736451000                                   
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-mono bg-emerald-950 text-emerald-400 border border-emerald-800 px-2 py-0.5 rounded font-bold">
+            <span className="text-[10px] font-mono bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded font-bold">
               MAINFRAME SYSOUT MODULE: RPT5001
             </span>
-            <span className="text-xs text-slate-400 font-mono">
+            <span className="text-xs text-slate-500 font-mono">
               132-COLUMN FIXED RECORD LENGTH (RECFM=FBA, LRECL=133)
             </span>
           </div>
-          <h2 className="text-xl font-bold text-white tracking-tight">
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">
             Official Mainframe Reports & Business Analytics
           </h2>
-          <p className="text-xs text-slate-400 font-mono">
+          <p className="text-xs text-slate-600 font-mono">
             Renders actual Enterprise COBOL ANSI carriage-control SYSOUT print files and data distributions
           </p>
         </div>
@@ -146,15 +143,15 @@ TBAT2024101000005000007500000HASH982736451000                                   
         <div className="flex items-center gap-2.5">
           <button
             onClick={() => setThemeMode(m => m === 'GREENBAR' ? 'TERMINAL' : 'GREENBAR')}
-            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 transition-colors shadow-sm"
+            className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-300 transition-colors shadow-sm"
           >
-            <Printer className="w-4 h-4 text-emerald-400" />
+            <Printer className="w-4 h-4 text-emerald-600" />
             <span>Theme: {themeMode}</span>
           </button>
 
           <button
             onClick={handleDownload}
-            className="flex items-center gap-2 bg-ibm-blue hover:bg-ibm-darkblue text-white text-xs font-semibold px-3.5 py-2 rounded-lg shadow transition-all active:scale-95"
+            className="flex items-center gap-2 bg-ibm-blue hover:bg-ibm-darkblue text-white text-xs font-semibold px-3.5 py-2 rounded-lg shadow-sm transition-all active:scale-95"
           >
             <Download className="w-4 h-4" />
             <span>Download Report</span>
@@ -163,7 +160,7 @@ TBAT2024101000005000007500000HASH982736451000                                   
       </div>
 
       {/* Tabs */}
-      <div className="flex flex-wrap gap-2 border-b border-slate-800 pb-3">
+      <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
         {[
           { id: 'ELIGIBLE', label: 'Eligible Students (Roster)' },
           { id: 'REJECTED', label: 'Rejected Applications (Audit)' },
@@ -177,7 +174,7 @@ TBAT2024101000005000007500000HASH982736451000                                   
             className={`px-3.5 py-2 rounded-lg text-xs font-mono font-medium transition-colors ${
               selectedReport === tab.id
                 ? 'bg-ibm-blue text-white shadow-sm font-semibold'
-                : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+                : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-300 shadow-sm'
             }`}
           >
             {tab.label}
@@ -186,23 +183,23 @@ TBAT2024101000005000007500000HASH982736451000                                   
       </div>
 
       {/* Report Terminal Container */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
-        <div className="bg-slate-950 px-4 py-2.5 border-b border-slate-800 flex items-center justify-between text-xs font-mono">
-          <span className="text-slate-400 flex items-center gap-2">
-            <FileText className="w-4 h-4 text-ibm-cyan" />
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between text-xs font-mono">
+          <span className="text-slate-700 font-medium flex items-center gap-2">
+            <FileText className="w-4 h-4 text-ibm-blue" />
             <span>SYSOUT ARCHIVE: USERID.SCHOLAR.REPORT.{selectedReport}</span>
           </span>
-          <span className="text-[11px] text-emerald-400 font-semibold">
+          <span className="text-[11px] text-emerald-800 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
             ANSI CARRIAGE CONTROL [CC: 1=PAGE, 0=DBL, ' '=SGL]
           </span>
         </div>
 
         <div className="p-4 overflow-x-auto">
           <pre
-            className={`font-mono text-xs p-6 rounded-lg leading-relaxed shadow-inner overflow-x-auto ${
+            className={`font-mono text-xs p-6 rounded-lg leading-relaxed shadow-sm overflow-x-auto ${
               themeMode === 'GREENBAR'
-                ? 'bg-[#0f241a] text-[#84fab0] border border-[#1b4332]'
-                : 'bg-black text-emerald-400 border border-slate-800'
+                ? 'bg-[#f4fbf7] text-[#14532d] border border-[#bbf7d0]'
+                : 'bg-slate-950 text-emerald-400 border border-slate-800'
             }`}
             style={{
               fontFamily: '"IBM Plex Mono", Courier, monospace',
@@ -216,13 +213,13 @@ TBAT2024101000005000007500000HASH982736451000                                   
       </div>
 
       {/* Analytical Visualizations */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm space-y-4">
+      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-bold text-slate-100 text-sm flex items-center gap-2">
+          <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
             <BarChart3 className="w-4 h-4 text-ibm-blue" />
             <span>Applicant Criteria Scatter Distribution (CGPA vs Annual Family Income)</span>
           </h3>
-          <span className="text-xs font-mono text-slate-400">
+          <span className="text-xs font-mono text-slate-500">
             Eligibility Cutoff: CGPA &ge; 7.50, Income &le; ₹2.5L
           </span>
         </div>
@@ -230,7 +227,7 @@ TBAT2024101000005000007500000HASH982736451000                                   
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
               <XAxis 
                 type="number" 
                 dataKey="cgpa" 
@@ -238,7 +235,7 @@ TBAT2024101000005000007500000HASH982736451000                                   
                 domain={[5.0, 10.0]} 
                 stroke="#64748b" 
                 fontSize={11}
-                label={{ value: 'CGPA', position: 'bottom', offset: 0, fill: '#94a3b8', fontSize: 11 }}
+                label={{ value: 'CGPA', position: 'bottom', offset: 0, fill: '#475569', fontSize: 11 }}
               />
               <YAxis 
                 type="number" 
@@ -246,15 +243,15 @@ TBAT2024101000005000007500000HASH982736451000                                   
                 name="Income (k INR)" 
                 stroke="#64748b" 
                 fontSize={11}
-                label={{ value: 'Family Income (₹ in Thousands)', angle: -90, position: 'left', fill: '#94a3b8', fontSize: 11 }}
+                label={{ value: 'Family Income (₹ in Thousands)', angle: -90, position: 'left', fill: '#475569', fontSize: 11 }}
               />
               <Tooltip 
                 cursor={{ strokeDasharray: '3 3' }} 
-                contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', fontSize: '11px', borderRadius: '6px' }}
+                contentStyle={{ backgroundColor: '#ffffff', borderColor: '#cbd5e1', fontSize: '11px', borderRadius: '6px', color: '#0f172a', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                 formatter={(val: any, name: any) => [name === 'Income (k INR)' ? `₹${val}k` : val, name]}
               />
-              <Scatter name="Eligible" data={scatterData.filter(d => d.status === 'E')} fill="#24a148" />
-              <Scatter name="Rejected" data={scatterData.filter(d => d.status !== 'E')} fill="#da1e28" />
+              <Scatter name="Eligible" data={scatterData.filter(d => d.status === 'E')} fill="#16a34a" />
+              <Scatter name="Rejected" data={scatterData.filter(d => d.status !== 'E')} fill="#dc2626" />
             </ScatterChart>
           </ResponsiveContainer>
         </div>

@@ -319,7 +319,7 @@ export const App: React.FC = () => {
   // If unauthenticated, always render Login view
   if (!session.isAuthenticated) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+      <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
         <Navbar
           session={session}
           onOpenBatchModal={() => {}}
@@ -330,15 +330,15 @@ export const App: React.FC = () => {
           isConnecting={isConnecting}
         />
         {backendError && (
-          <div className="bg-red-950 border-b border-red-800 px-4 py-2.5 text-xs font-mono text-red-200 flex items-center justify-between">
+          <div className="bg-red-50 border-b border-red-200 px-4 py-2.5 text-xs font-mono text-red-800 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+              <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
               <span>Backend connection error: {backendError} (Target: {API_BASE_URL || 'Same Origin'})</span>
             </div>
             <button
               onClick={loadBackendData}
               disabled={isConnecting}
-              className="px-2.5 py-1 bg-red-900 hover:bg-red-800 text-white rounded text-[11px] font-semibold flex items-center gap-1"
+              className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-[11px] font-semibold flex items-center gap-1 shadow-sm"
             >
               <RefreshCw className={`w-3 h-3 ${isConnecting ? 'animate-spin' : ''}`} />
               <span>Retry</span>
@@ -354,7 +354,7 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
       {/* Top Navbar */}
       <Navbar
         session={session}
@@ -370,18 +370,18 @@ export const App: React.FC = () => {
 
       {/* Backend Connection Status Banner when Disconnected */}
       {!isBackendLive && (
-        <div className="bg-red-950 border-b border-red-800 px-4 py-2.5 text-xs font-mono text-red-200 flex items-center justify-between">
+        <div className="bg-red-50 border-b border-red-200 px-4 py-2.5 text-xs font-mono text-red-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <WifiOff className="w-4 h-4 text-red-400 shrink-0" />
+            <WifiOff className="w-4 h-4 text-red-600 shrink-0" />
             <span>
-              Backend disconnected: Unable to reach REST API at <strong className="text-white">{API_BASE_URL || window.location.origin}</strong>.
+              Backend disconnected: Unable to reach REST API at <strong className="text-slate-900">{API_BASE_URL || window.location.origin}</strong>.
               {backendError ? ` (${backendError})` : ''}
             </span>
           </div>
           <button
             onClick={loadBackendData}
             disabled={isConnecting}
-            className="px-3 py-1 bg-red-900 hover:bg-red-800 text-white rounded text-[11px] font-semibold flex items-center gap-1.5"
+            className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-[11px] font-semibold flex items-center gap-1.5 shadow-sm"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isConnecting ? 'animate-spin' : ''}`} />
             <span>{isConnecting ? 'Connecting...' : 'Retry Connection'}</span>
@@ -391,14 +391,14 @@ export const App: React.FC = () => {
 
       {/* Live Notification Banner */}
       {liveExecutionMessage && (
-        <div className="bg-emerald-950 border-b border-emerald-600/40 px-4 py-2 text-xs font-mono text-emerald-300 flex items-center justify-between animate-fadeIn">
+        <div className="bg-emerald-50 border-b border-emerald-200 px-4 py-2 text-xs font-mono text-emerald-800 flex items-center justify-between animate-fadeIn">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
             <span>{liveExecutionMessage}</span>
           </div>
           <button
             onClick={() => setLiveExecutionMessage(null)}
-            className="text-emerald-400 hover:text-white text-xs underline"
+            className="text-emerald-700 hover:text-emerald-900 text-xs underline font-semibold"
           >
             Dismiss
           </button>
@@ -420,7 +420,7 @@ export const App: React.FC = () => {
         />
 
         {/* Content View Container */}
-        <main className="flex-1 overflow-y-auto bg-slate-950">
+        <main className="flex-1 overflow-y-auto bg-slate-50">
           {activePage === 'dashboard' && (
             <DashboardOverviewPage
               summary={summary}

@@ -130,17 +130,17 @@ export const DisbursementManagementPage: React.FC<DisbursementManagementPageProp
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-mono bg-indigo-950 text-indigo-400 border border-indigo-800 px-2 py-0.5 rounded font-bold">
+            <span className="text-[10px] font-mono bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded font-bold">
               COBOL DISBURSEMENT ENGINE: DIS4001
             </span>
-            <span className="text-xs text-slate-400 font-mono">
+            <span className="text-xs text-slate-500 font-mono">
               OUTPUT: USERID.SCHOLAR.DATA.DISB.PAYMENTS
             </span>
           </div>
-          <h2 className="text-xl font-bold text-white tracking-tight">
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">
             Scholarship Disbursement & Electronic Fund Advice
           </h2>
-          <p className="text-xs text-slate-400 font-mono">
+          <p className="text-xs text-slate-600 font-mono">
             Simulated electronic fund transfer instructions complying with standard NACHA / APBS banking layouts
           </p>
         </div>
@@ -148,18 +148,18 @@ export const DisbursementManagementPage: React.FC<DisbursementManagementPageProp
         <div className="flex items-center gap-2.5">
           <button
             onClick={exportApbsDat}
-            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 transition-colors shadow-sm"
+            className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-300 transition-colors shadow-sm"
             title="Download fixed-width 120-byte APBS batch payment file"
           >
-            <FileText className="w-4 h-4 text-emerald-400" />
+            <FileText className="w-4 h-4 text-emerald-600" />
             <span>Export APBS .DAT</span>
           </button>
 
           <button
             onClick={exportCsv}
-            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 transition-colors shadow-sm"
+            className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold px-3.5 py-2 rounded-lg border border-slate-300 transition-colors shadow-sm"
           >
-            <Download className="w-4 h-4 text-ibm-cyan" />
+            <Download className="w-4 h-4 text-ibm-blue" />
             <span>Export Payments CSV</span>
           </button>
 
@@ -167,7 +167,7 @@ export const DisbursementManagementPage: React.FC<DisbursementManagementPageProp
             <button
               onClick={handleSettleAllPending}
               disabled={isSettling}
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 text-white text-xs font-semibold px-3.5 py-2 rounded-lg shadow-sm transition-all active:scale-95"
+              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white text-xs font-semibold px-3.5 py-2 rounded-lg shadow-sm transition-all active:scale-95"
             >
               {isSettling ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
@@ -181,64 +181,64 @@ export const DisbursementManagementPage: React.FC<DisbursementManagementPageProp
       </div>
 
       {settleError && (
-        <div className="p-3 bg-red-950/80 border border-red-700 rounded-lg text-xs text-red-200 flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800 flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
           <span>{settleError}</span>
         </div>
       )}
 
       {/* Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-sm">
-          <div className="text-xs text-slate-400 font-mono">Total Approved Value</div>
-          <div className="text-2xl font-bold font-mono text-emerald-400 mt-1">
+        <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
+          <div className="text-xs text-slate-500 font-mono">Total Approved Value</div>
+          <div className="text-2xl font-bold font-mono text-emerald-700 mt-1">
             INR {totalDisbursed.toLocaleString()}
           </div>
           <div className="text-[10px] text-slate-500 mt-1">Calculated via COBOL slab rules</div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-sm">
-          <div className="text-xs text-slate-400 font-mono">Settled Transfers</div>
-          <div className="text-2xl font-bold font-mono text-slate-100 mt-1">
+        <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
+          <div className="text-xs text-slate-500 font-mono">Settled Transfers</div>
+          <div className="text-2xl font-bold font-mono text-slate-900 mt-1">
             {settledCount} Instructions
           </div>
-          <div className="text-[10px] text-emerald-400/80 mt-1">UTR confirmation logged</div>
+          <div className="text-[10px] text-emerald-700 font-medium mt-1">UTR confirmation logged</div>
         </div>
 
-        <div className="bg-slate-900 border border-amber-900/40 p-4 rounded-xl shadow-sm">
-          <div className="text-xs text-amber-400 font-mono">Pending Settlement</div>
-          <div className="text-2xl font-bold font-mono text-amber-400 mt-1">
+        <div className="bg-white border border-amber-200 p-4 rounded-xl shadow-sm">
+          <div className="text-xs text-amber-700 font-mono">Pending Settlement</div>
+          <div className="text-2xl font-bold font-mono text-amber-700 mt-1">
             {pendingCount} Instructions
           </div>
-          <div className="text-[10px] text-amber-400/70 mt-1">Awaiting batch clearing</div>
+          <div className="text-[10px] text-amber-600 mt-1">Awaiting batch clearing</div>
         </div>
       </div>
 
       {/* Duplicate Prevention Guarantee Banner */}
-      <div className="bg-slate-900/80 border border-indigo-900/60 p-4 rounded-xl flex items-center justify-between shadow-sm">
+      <div className="bg-indigo-50/70 border border-indigo-200 p-4 rounded-xl flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-indigo-950 text-indigo-400 rounded-lg border border-indigo-800">
+          <div className="p-2.5 bg-white text-indigo-700 rounded-lg border border-indigo-200 shadow-sm">
             <ShieldCheck className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="text-xs font-bold text-slate-200">
+            <h4 className="text-xs font-bold text-slate-900">
               DIS4001 Duplicate Disbursement Prevention Shield
             </h4>
-            <p className="text-[11px] text-slate-400 font-mono">
+            <p className="text-[11px] text-slate-600 font-mono">
               Enforces unique in-flight payment tracking per Student ID and Application Reference. Prevents multiple payouts across parallel batch streams.
             </p>
           </div>
         </div>
-        <span className="text-[11px] font-mono font-semibold bg-emerald-950 text-emerald-400 border border-emerald-800 px-2.5 py-1 rounded">
+        <span className="text-[11px] font-mono font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded shadow-sm">
           ENFORCED
         </span>
       </div>
 
       {/* Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-mono">
-            <thead className="bg-slate-950/80 border-b border-slate-800 text-slate-400 font-semibold uppercase text-[11px]">
+            <thead className="bg-slate-100 border-b border-slate-200 text-slate-700 font-semibold uppercase text-[11px]">
               <tr>
                 <th className="py-3 px-4">Disb Ref ID</th>
                 <th className="py-3 px-4">App ID</th>
@@ -252,44 +252,44 @@ export const DisbursementManagementPage: React.FC<DisbursementManagementPageProp
                 <th className="py-3 px-4 text-center">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-100">
               {filtered.map((d) => (
-                <tr key={d.ref_id} className="greenbar-row hover:bg-slate-800/50 transition-colors">
-                  <td className="py-3 px-4 text-ibm-cyan font-bold">
+                <tr key={d.ref_id} className="greenbar-row hover:bg-slate-50 transition-colors">
+                  <td className="py-3 px-4 text-ibm-blue font-bold">
                     {d.ref_id}
                   </td>
-                  <td className="py-3 px-4 text-slate-300 font-semibold">
+                  <td className="py-3 px-4 text-slate-800 font-semibold">
                     {d.app_id}
                   </td>
-                  <td className="py-3 px-4 text-slate-300">
+                  <td className="py-3 px-4 text-slate-700">
                     {d.stu_id}
                   </td>
-                  <td className="py-3 px-4 text-slate-400">
+                  <td className="py-3 px-4 text-slate-600">
                     {'•••• •••• •••• ' + d.bank_ac_num.slice(-4)}
                   </td>
-                  <td className="py-3 px-4 text-slate-300">
+                  <td className="py-3 px-4 text-slate-700">
                     {d.bank_ifsc}
                   </td>
-                  <td className="py-3 px-4 text-emerald-400 font-semibold">
+                  <td className="py-3 px-4 text-emerald-700 font-semibold">
                     {d.utr_num}
                   </td>
-                  <td className="py-3 px-4 text-slate-400">
+                  <td className="py-3 px-4 text-slate-600">
                     {d.value_date}
                   </td>
                   <td className="py-3 px-4">
                     {d.status === 'S' ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-950 text-emerald-400 border border-emerald-800">
-                        <CheckCircle2 className="w-3 h-3" />
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                         SETTLED
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-950 text-amber-400 border border-amber-800">
-                        <Clock className="w-3 h-3" />
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                        <Clock className="w-3 h-3 text-amber-600" />
                         PENDING
                       </span>
                     )}
                   </td>
-                  <td className="py-3 px-4 text-right font-bold text-slate-200">
+                  <td className="py-3 px-4 text-right font-bold text-slate-900">
                     {d.amount.toLocaleString()}
                   </td>
                   <td className="py-3 px-4 text-center">
@@ -297,7 +297,7 @@ export const DisbursementManagementPage: React.FC<DisbursementManagementPageProp
                       <button
                         onClick={() => handleSettleIndividual(d)}
                         disabled={settlingId === (d.disb_id || d.ref_id)}
-                        className="bg-emerald-700/80 hover:bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-semibold transition-all inline-flex items-center gap-1"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded text-[10px] font-semibold transition-all inline-flex items-center gap-1 shadow-sm"
                         title="Settle this disbursement with UTR"
                       >
                         {settlingId === (d.disb_id || d.ref_id) ? (
@@ -308,7 +308,7 @@ export const DisbursementManagementPage: React.FC<DisbursementManagementPageProp
                         <span>Settle</span>
                       </button>
                     ) : (
-                      <span className="text-[10px] text-slate-500 font-mono">Done</span>
+                      <span className="text-[10px] text-slate-400 font-mono">Done</span>
                     )}
                   </td>
                 </tr>

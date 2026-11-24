@@ -160,17 +160,17 @@ export const StudentRecordsPage: React.FC<StudentRecordsPageProps> = ({
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-mono bg-blue-950 text-blue-400 border border-blue-800 px-2 py-0.5 rounded font-bold">
+            <span className="text-[10px] font-mono bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded font-bold">
               VSAM CLUSTER: USERID.SCHOLAR.VSAM.STUMAST.KSDS
             </span>
-            <span className="text-xs text-slate-400 font-mono">
+            <span className="text-xs text-slate-500 font-mono">
               RECORDSIZE(150 150) • KEYS(10 0)
             </span>
           </div>
-          <h2 className="text-xl font-bold text-white tracking-tight">
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">
             VSAM Indexed Student Master Records
           </h2>
-          <p className="text-xs text-slate-400 font-mono">
+          <p className="text-xs text-slate-600 font-mono">
             Fast keyed sequential access for batch lookup by 10-byte Student ID during eligibility runs
           </p>
         </div>
@@ -188,9 +188,9 @@ export const StudentRecordsPage: React.FC<StudentRecordsPageProps> = ({
 
               <button
                 onClick={() => setIsUploadModalOpen(true)}
-                className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 transition-colors shadow-sm"
+                className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-300 transition-colors shadow-sm"
               >
-                <Upload className="w-4 h-4 text-emerald-400" />
+                <Upload className="w-4 h-4 text-emerald-600" />
                 <span>Bulk Upload</span>
               </button>
             </>
@@ -198,18 +198,18 @@ export const StudentRecordsPage: React.FC<StudentRecordsPageProps> = ({
 
           <button
             onClick={exportCsv}
-            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3.5 py-2 rounded-lg border border-slate-700 transition-colors shadow-sm"
+            className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold px-3.5 py-2 rounded-lg border border-slate-300 transition-colors shadow-sm"
           >
-            <Download className="w-4 h-4 text-ibm-cyan" />
+            <Download className="w-4 h-4 text-ibm-blue" />
             <span>Export CSV</span>
           </button>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-slate-900 border border-slate-800 rounded-lg p-3.5 flex flex-col md:flex-row gap-3 items-center justify-between shadow-sm">
+      <div className="bg-white border border-slate-200 rounded-lg p-3.5 flex flex-col md:flex-row gap-3 items-center justify-between shadow-sm">
         <div className="relative w-full md:w-80">
-          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-500" />
+          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
           <input
             type="text"
             placeholder="Search by ID, name or email..."
@@ -218,21 +218,21 @@ export const StudentRecordsPage: React.FC<StudentRecordsPageProps> = ({
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-ibm-blue font-mono"
+            className="w-full bg-white border border-slate-300 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-ibm-blue font-mono shadow-sm"
           />
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto">
           <div className="flex items-center gap-2">
-            <Filter className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-xs text-slate-400 font-mono">Department:</span>
+            <Filter className="w-3.5 h-3.5 text-slate-500" />
+            <span className="text-xs text-slate-600 font-mono">Department:</span>
             <select
               value={selectedDept}
               onChange={(e) => {
                 setSelectedDept(e.target.value);
                 setCurrentPage(1);
               }}
-              className="bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-ibm-blue font-mono"
+              className="bg-white border border-slate-300 rounded px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-ibm-blue font-mono shadow-sm"
             >
               <option value="ALL">ALL DEPARTMENTS</option>
               <option value="CSE">CSE</option>
@@ -252,10 +252,10 @@ export const StudentRecordsPage: React.FC<StudentRecordsPageProps> = ({
       </div>
 
       {/* Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-mono">
-            <thead className="bg-slate-950/80 border-b border-slate-800 text-slate-400 font-semibold uppercase text-[11px]">
+            <thead className="bg-slate-100 border-b border-slate-200 text-slate-700 font-semibold uppercase text-[11px]">
               <tr>
                 <th className="py-3 px-4">Student ID (Key)</th>
                 <th className="py-3 px-4">Full Name</th>
@@ -269,40 +269,40 @@ export const StudentRecordsPage: React.FC<StudentRecordsPageProps> = ({
                 <th className="py-3 px-4 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-100">
               {displayed.map((s) => (
-                <tr key={s.stu_id} className="greenbar-row hover:bg-slate-800/50 transition-colors">
-                  <td className="py-3 px-4 font-bold text-ibm-cyan">
+                <tr key={s.stu_id} className="greenbar-row hover:bg-slate-50 transition-colors">
+                  <td className="py-3 px-4 font-bold text-ibm-blue">
                     {s.stu_id}
                   </td>
-                  <td className="py-3 px-4 text-slate-200 font-sans font-medium">
+                  <td className="py-3 px-4 text-slate-900 font-sans font-medium">
                     {s.name}
                   </td>
-                  <td className="py-3 px-4 text-slate-400">
-                    <span className="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px] font-semibold">
+                  <td className="py-3 px-4 text-slate-600">
+                    <span className="bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 rounded text-[10px] font-semibold">
                       {s.dept.trim()}
                     </span>
                   </td>
-                  <td className="py-3 px-4 text-slate-400">
+                  <td className="py-3 px-4 text-slate-600">
                     Yr {s.year}
                   </td>
-                  <td className="py-3 px-4 text-slate-400">
+                  <td className="py-3 px-4 text-slate-600">
                     {s.email}
                   </td>
-                  <td className="py-3 px-4 font-semibold text-emerald-400">
+                  <td className="py-3 px-4 font-semibold text-emerald-700">
                     {s.cgpa !== undefined ? s.cgpa.toFixed(2) : 'N/A'}
                   </td>
-                  <td className="py-3 px-4 text-slate-300">
+                  <td className="py-3 px-4 text-slate-700 font-medium">
                     {s.attendance !== undefined ? `${s.attendance.toFixed(1)}%` : 'N/A'}
                   </td>
-                  <td className="py-3 px-4 text-slate-400">
+                  <td className="py-3 px-4 text-slate-600">
                     {s.income !== undefined ? `₹${s.income.toLocaleString()}` : 'N/A'}
                   </td>
                   <td className="py-3 px-4">
                     <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
                       s.status === 'ACTIVE' || s.status === 'A'
-                        ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                        : 'bg-red-950 text-red-400 border border-red-800'
+                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                        : 'bg-red-50 text-red-800 border border-red-200'
                     }`}>
                       {s.status}
                     </span>
@@ -311,7 +311,7 @@ export const StudentRecordsPage: React.FC<StudentRecordsPageProps> = ({
                     <div className="flex items-center justify-center gap-1.5">
                       <button
                         onClick={() => setSelectedStudent(s)}
-                        className="bg-slate-800 hover:bg-slate-700 text-ibm-cyan px-2 py-1 rounded text-[10px] transition-colors"
+                        className="bg-white hover:bg-slate-100 border border-slate-200 text-ibm-blue px-2 py-1 rounded text-[10px] transition-colors shadow-sm"
                         title="View Record Hex Dump"
                       >
                         <Eye className="w-3.5 h-3.5" />
@@ -319,7 +319,7 @@ export const StudentRecordsPage: React.FC<StudentRecordsPageProps> = ({
                       {isAdminOrOperator && (s.status === 'ACTIVE' || s.status === 'A') && (
                         <button
                           onClick={() => handleDeactivate(s.stu_id)}
-                          className="bg-slate-800 hover:bg-red-950 text-red-400 px-2 py-1 rounded text-[10px] transition-colors"
+                          className="bg-white hover:bg-red-50 border border-slate-200 text-red-600 px-2 py-1 rounded text-[10px] transition-colors shadow-sm"
                           title="Deactivate Student Record"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -334,20 +334,20 @@ export const StudentRecordsPage: React.FC<StudentRecordsPageProps> = ({
         </div>
 
         {/* Pagination */}
-        <div className="p-3 bg-slate-950/80 border-t border-slate-800 flex items-center justify-between text-xs font-mono text-slate-400">
+        <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs font-mono text-slate-600">
           <span>Page {currentPage} of {totalPages || 1}</span>
           <div className="flex gap-1">
             <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 rounded text-slate-300"
+              className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 disabled:opacity-40 rounded text-slate-700 shadow-sm"
             >
               Prev
             </button>
             <button
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages || totalPages === 0}
-              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 rounded text-slate-300"
+              className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 disabled:opacity-40 rounded text-slate-700 shadow-sm"
             >
               Next
             </button>
@@ -357,21 +357,21 @@ export const StudentRecordsPage: React.FC<StudentRecordsPageProps> = ({
 
       {/* Add Student Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-lg w-full p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <Plus className="w-4 h-4 text-ibm-blue" />
                 <span>Add Student to VSAM Master (PostgreSQL)</span>
               </h3>
-              <button onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {addError && (
-              <div className="p-3 bg-red-950/80 border border-red-700 rounded text-xs text-red-200 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+              <div className="p-3 bg-red-50 border border-red-200 rounded text-xs text-red-800 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
                 <span>{addError}</span>
               </div>
             )}
@@ -379,47 +379,47 @@ export const StudentRecordsPage: React.FC<StudentRecordsPageProps> = ({
             <form onSubmit={handleAddSubmit} className="space-y-3 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-slate-300 font-mono block mb-1">Student ID (STU+7 digits)</label>
+                  <label className="text-slate-700 font-mono block mb-1">Student ID (STU+7 digits)</label>
                   <input
                     type="text"
                     required
                     placeholder="STU2024101"
                     value={addForm.student_id}
                     onChange={(e) => setAddForm({ ...addForm, student_id: e.target.value.toUpperCase() })}
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 font-mono text-emerald-400 uppercase"
+                    className="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 font-mono text-slate-900 uppercase focus:border-ibm-blue focus:ring-1 focus:ring-ibm-blue outline-none shadow-sm"
                   />
                 </div>
                 <div>
-                  <label className="text-slate-300 font-mono block mb-1">Full Name</label>
+                  <label className="text-slate-700 font-mono block mb-1">Full Name</label>
                   <input
                     type="text"
                     required
                     placeholder="Student Name"
                     value={addForm.name}
                     onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100"
+                    className="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 text-slate-900 focus:border-ibm-blue focus:ring-1 focus:ring-ibm-blue outline-none shadow-sm"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-slate-300 font-mono block mb-1">Email</label>
+                  <label className="text-slate-700 font-mono block mb-1">Email</label>
                   <input
                     type="email"
                     required
                     placeholder="student@scholarship.edu"
                     value={addForm.email}
                     onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100"
+                    className="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 text-slate-900 focus:border-ibm-blue focus:ring-1 focus:ring-ibm-blue outline-none shadow-sm"
                   />
                 </div>
                 <div>
-                  <label className="text-slate-300 font-mono block mb-1">Department</label>
+                  <label className="text-slate-700 font-mono block mb-1">Department</label>
                   <select
                     value={addForm.department}
                     onChange={(e) => setAddForm({ ...addForm, department: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 font-mono"
+                    className="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 text-slate-900 font-mono focus:border-ibm-blue focus:ring-1 focus:ring-ibm-blue outline-none shadow-sm"
                   >
                     <option value="CSE">CSE</option>
                     <option value="ECE">ECE</option>
@@ -434,7 +434,7 @@ export const StudentRecordsPage: React.FC<StudentRecordsPageProps> = ({
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="text-slate-300 font-mono block mb-1">CGPA (0-10)</label>
+                  <label className="text-slate-700 font-mono block mb-1">CGPA (0-10)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -443,11 +443,11 @@ export const StudentRecordsPage: React.FC<StudentRecordsPageProps> = ({
                     required
                     value={addForm.cgpa}
                     onChange={(e) => setAddForm({ ...addForm, cgpa: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 font-mono text-emerald-400"
+                    className="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 font-mono text-emerald-700 focus:border-ibm-blue focus:ring-1 focus:ring-ibm-blue outline-none shadow-sm"
                   />
                 </div>
                 <div>
-                  <label className="text-slate-300 font-mono block mb-1">Attendance %</label>
+                  <label className="text-slate-700 font-mono block mb-1">Attendance %</label>
                   <input
                     type="number"
                     step="0.01"
@@ -456,31 +456,31 @@ export const StudentRecordsPage: React.FC<StudentRecordsPageProps> = ({
                     required
                     value={addForm.attendance}
                     onChange={(e) => setAddForm({ ...addForm, attendance: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 font-mono text-emerald-400"
+                    className="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 font-mono text-slate-900 focus:border-ibm-blue focus:ring-1 focus:ring-ibm-blue outline-none shadow-sm"
                   />
                 </div>
                 <div>
-                  <label className="text-slate-300 font-mono block mb-1">Arrears</label>
+                  <label className="text-slate-700 font-mono block mb-1">Arrears</label>
                   <input
                     type="number"
                     min="0"
                     required
                     value={addForm.active_arrears}
                     onChange={(e) => setAddForm({ ...addForm, active_arrears: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 font-mono text-slate-100"
+                    className="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 font-mono text-slate-900 focus:border-ibm-blue focus:ring-1 focus:ring-ibm-blue outline-none shadow-sm"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-slate-300 font-mono block mb-1">Annual Family Income (INR)</label>
+                <label className="text-slate-700 font-mono block mb-1">Annual Family Income (INR)</label>
                 <input
                   type="number"
                   min="0"
                   required
                   value={addForm.annual_family_income}
                   onChange={(e) => setAddForm({ ...addForm, annual_family_income: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 font-mono text-slate-100"
+                  className="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 font-mono text-slate-900 focus:border-ibm-blue focus:ring-1 focus:ring-ibm-blue outline-none shadow-sm"
                 />
               </div>
 
@@ -488,14 +488,14 @@ export const StudentRecordsPage: React.FC<StudentRecordsPageProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded"
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isAdding}
-                  className="px-4 py-1.5 bg-ibm-blue hover:bg-ibm-darkblue disabled:bg-slate-800 text-white rounded font-semibold flex items-center gap-1.5"
+                  className="px-4 py-1.5 bg-ibm-blue hover:bg-ibm-darkblue disabled:bg-slate-300 text-white rounded font-semibold flex items-center gap-1.5 shadow-sm"
                 >
                   {isAdding && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>{isAdding ? 'Saving...' : 'Add Student'}</span>
@@ -508,27 +508,27 @@ export const StudentRecordsPage: React.FC<StudentRecordsPageProps> = ({
 
       {/* Bulk Upload Modal */}
       {isUploadModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-lg w-full p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Upload className="w-4 h-4 text-emerald-400" />
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Upload className="w-4 h-4 text-emerald-600" />
                 <span>Bulk Upload Student Master CSV</span>
               </h3>
-              <button onClick={() => setIsUploadModalOpen(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setIsUploadModalOpen(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {uploadMessage && (
-              <div className="p-3 bg-slate-950 border border-slate-700 rounded text-xs text-slate-200">
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded text-xs text-slate-800">
                 {uploadMessage}
               </div>
             )}
 
             <form onSubmit={handleBulkUpload} className="space-y-3 text-xs">
-              <p className="text-slate-400 text-[11px]">
-                Paste CSV data below with columns: <code className="text-emerald-400">student_id,name,email,department,course,academic_year,cgpa,attendance,annual_family_income,active_arrears</code>
+              <p className="text-slate-600 text-[11px]">
+                Paste CSV data below with columns: <code className="text-emerald-700 font-semibold">student_id,name,email,department,course,academic_year,cgpa,attendance,annual_family_income,active_arrears</code>
               </p>
 
               <textarea
@@ -537,21 +537,21 @@ export const StudentRecordsPage: React.FC<StudentRecordsPageProps> = ({
                 placeholder="student_id,name,email,department,course,academic_year,cgpa,attendance,annual_family_income,active_arrears&#10;STU2024101,John Doe,john@edu.com,CSE,B.Tech,2,8.80,89.0,180000,0"
                 value={csvContent}
                 onChange={(e) => setCsvContent(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded p-2.5 font-mono text-[11px] text-slate-100 focus:outline-none focus:border-ibm-blue"
+                className="w-full bg-white border border-slate-300 rounded p-2.5 font-mono text-[11px] text-slate-900 focus:outline-none focus:border-ibm-blue focus:ring-1 focus:ring-ibm-blue shadow-sm"
               ></textarea>
 
               <div className="flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsUploadModalOpen(false)}
-                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded"
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded"
                 >
                   Close
                 </button>
                 <button
                   type="submit"
                   disabled={isUploading}
-                  className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 text-white rounded font-semibold flex items-center gap-1.5"
+                  className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white rounded font-semibold flex items-center gap-1.5 shadow-sm"
                 >
                   {isUploading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>{isUploading ? 'Uploading...' : 'Process Upload'}</span>
@@ -564,28 +564,28 @@ export const StudentRecordsPage: React.FC<StudentRecordsPageProps> = ({
 
       {/* Hex Dump Inspector Modal */}
       {selectedStudent && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-2xl w-full p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-xl max-w-2xl w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div className="flex items-center gap-2">
-                <Binary className="w-4 h-4 text-ibm-cyan" />
-                <h3 className="text-sm font-bold text-white">
+                <Binary className="w-4 h-4 text-ibm-blue" />
+                <h3 className="text-sm font-bold text-slate-900">
                   VSAM Record Hex Dump: {selectedStudent.stu_id}
                 </h3>
               </div>
-              <button onClick={() => setSelectedStudent(null)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setSelectedStudent(null)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <pre className="bg-slate-950 p-3 rounded font-mono text-[11px] text-emerald-400 overflow-x-auto border border-slate-800">
+            <pre className="bg-slate-900 p-3 rounded font-mono text-[11px] text-emerald-400 overflow-x-auto border border-slate-800">
               {generateHexDump(selectedStudent)}
             </pre>
 
             <div className="flex justify-end">
               <button
                 onClick={() => setSelectedStudent(null)}
-                className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs"
+                className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded text-xs font-semibold"
               >
                 Close
               </button>

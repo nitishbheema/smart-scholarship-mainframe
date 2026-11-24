@@ -135,17 +135,17 @@ export const ScholarshipApplicationsPage: React.FC<ScholarshipApplicationsPagePr
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-mono bg-blue-950 text-blue-400 border border-blue-800 px-2 py-0.5 rounded font-bold">
+            <span className="text-[10px] font-mono bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded font-bold">
               BATCH DATASET: USERID.SCHOLAR.DATA.APPL.RAW
             </span>
-            <span className="text-xs text-slate-400 font-mono">
+            <span className="text-xs text-slate-500 font-mono">
               RECORDING MODE F • LRECL=120 • RECFM=FB
             </span>
           </div>
-          <h2 className="text-xl font-bold text-white tracking-tight">
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">
             Scholarship Application Batch Feed
           </h2>
-          <p className="text-xs text-slate-400 font-mono">
+          <p className="text-xs text-slate-600 font-mono">
             Sequential application stream ingested for duplicate checks (DUP3001) and rules processing (SCH2001)
           </p>
         </div>
@@ -163,9 +163,9 @@ export const ScholarshipApplicationsPage: React.FC<ScholarshipApplicationsPagePr
 
               <button
                 onClick={() => setIsUploadModalOpen(true)}
-                className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 transition-colors shadow-sm"
+                className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-300 transition-colors shadow-sm"
               >
-                <Upload className="w-4 h-4 text-emerald-400" />
+                <Upload className="w-4 h-4 text-emerald-600" />
                 <span>Bulk Upload</span>
               </button>
             </>
@@ -173,18 +173,18 @@ export const ScholarshipApplicationsPage: React.FC<ScholarshipApplicationsPagePr
 
           <button
             onClick={exportCsv}
-            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3.5 py-2 rounded-lg border border-slate-700 transition-colors shadow-sm"
+            className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold px-3.5 py-2 rounded-lg border border-slate-300 transition-colors shadow-sm"
           >
-            <Download className="w-4 h-4 text-ibm-cyan" />
+            <Download className="w-4 h-4 text-ibm-blue" />
             <span>Export Feed CSV</span>
           </button>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-slate-900 border border-slate-800 rounded-lg p-3.5 flex flex-col md:flex-row gap-3 items-center justify-between shadow-sm">
+      <div className="bg-white border border-slate-200 rounded-lg p-3.5 flex flex-col md:flex-row gap-3 items-center justify-between shadow-sm">
         <div className="relative w-full md:w-80">
-          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-500" />
+          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
           <input
             type="text"
             placeholder="Search by App ID, Student ID, Scheme..."
@@ -193,21 +193,21 @@ export const ScholarshipApplicationsPage: React.FC<ScholarshipApplicationsPagePr
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-ibm-blue font-mono"
+            className="w-full bg-white border border-slate-300 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-ibm-blue font-mono shadow-sm"
           />
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto">
           <div className="flex items-center gap-2">
-            <Filter className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-xs text-slate-400 font-mono">Status:</span>
+            <Filter className="w-3.5 h-3.5 text-slate-500" />
+            <span className="text-xs text-slate-600 font-mono">Status:</span>
             <select
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-ibm-blue font-mono"
+              className="bg-white border border-slate-300 rounded px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-ibm-blue font-mono shadow-sm"
             >
               <option value="ALL">ALL STATUSES</option>
               <option value="SUBMITTED">SUBMITTED</option>
@@ -224,10 +224,10 @@ export const ScholarshipApplicationsPage: React.FC<ScholarshipApplicationsPagePr
       </div>
 
       {/* Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-mono">
-            <thead className="bg-slate-950/80 border-b border-slate-800 text-slate-400 font-semibold uppercase text-[11px]">
+            <thead className="bg-slate-100 border-b border-slate-200 text-slate-700 font-semibold uppercase text-[11px]">
               <tr>
                 <th className="py-3 px-4">Application ID</th>
                 <th className="py-3 px-4">Student ID</th>
@@ -241,42 +241,42 @@ export const ScholarshipApplicationsPage: React.FC<ScholarshipApplicationsPagePr
                 <th className="py-3 px-4 text-center">Record</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-100">
               {displayed.map((a) => (
-                <tr key={a.app_id} className="greenbar-row hover:bg-slate-800/50 transition-colors">
-                  <td className="py-3 px-4 font-bold text-ibm-cyan">
+                <tr key={a.app_id} className="greenbar-row hover:bg-slate-50 transition-colors">
+                  <td className="py-3 px-4 font-bold text-ibm-blue">
                     {a.app_id}
                   </td>
-                  <td className="py-3 px-4 text-slate-300 font-medium">
+                  <td className="py-3 px-4 text-slate-800 font-medium">
                     {a.stu_id}
                   </td>
-                  <td className="py-3 px-4 text-slate-300">
-                    <span className="bg-blue-950 text-blue-300 border border-blue-800/60 px-2 py-0.5 rounded text-[10px] font-semibold">
+                  <td className="py-3 px-4 text-slate-700">
+                    <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded text-[10px] font-semibold">
                       {a.sch_code}
                     </span>
                   </td>
-                  <td className="py-3 px-4 text-slate-400">
+                  <td className="py-3 px-4 text-slate-600">
                     {a.app_date}
                   </td>
-                  <td className="py-3 px-4 font-semibold text-emerald-400">
+                  <td className="py-3 px-4 font-semibold text-emerald-700">
                     {a.cgpa.toFixed(2)}
                   </td>
-                  <td className="py-3 px-4 text-slate-300">
+                  <td className="py-3 px-4 text-slate-700 font-medium">
                     {a.attendance.toFixed(1)}%
                   </td>
-                  <td className="py-3 px-4 text-slate-400">
+                  <td className="py-3 px-4 text-slate-600">
                     ₹{a.income.toLocaleString()}
                   </td>
-                  <td className="py-3 px-4 text-slate-400">
+                  <td className="py-3 px-4 text-slate-600">
                     {'•••• •••• •••• ' + (a.bank_ac_num || '').slice(-4)}
                   </td>
                   <td className="py-3 px-4">
                     <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
                       a.status === 'ELIGIBLE'
-                        ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                         : a.status === 'REJECTED'
-                        ? 'bg-red-950 text-red-400 border border-red-800'
-                        : 'bg-amber-950 text-amber-400 border border-amber-800'
+                        ? 'bg-red-50 text-red-800 border border-red-200'
+                        : 'bg-amber-50 text-amber-800 border border-amber-200'
                     }`}>
                       {a.status || 'SUBMITTED'}
                     </span>
@@ -284,7 +284,7 @@ export const ScholarshipApplicationsPage: React.FC<ScholarshipApplicationsPagePr
                   <td className="py-3 px-4 text-center">
                     <button
                       onClick={() => setSelectedApp(a)}
-                      className="bg-slate-800 hover:bg-slate-700 text-ibm-cyan px-2 py-1 rounded text-[10px] transition-colors"
+                      className="bg-white hover:bg-slate-100 border border-slate-200 text-ibm-blue px-2 py-1 rounded text-[10px] transition-colors shadow-sm"
                       title="Inspect 120-Byte Layout"
                     >
                       <Eye className="w-3.5 h-3.5" />
@@ -297,20 +297,20 @@ export const ScholarshipApplicationsPage: React.FC<ScholarshipApplicationsPagePr
         </div>
 
         {/* Pagination */}
-        <div className="p-3 bg-slate-950/80 border-t border-slate-800 flex items-center justify-between text-xs font-mono text-slate-400">
+        <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs font-mono text-slate-600">
           <span>Page {currentPage} of {totalPages || 1}</span>
           <div className="flex gap-1">
             <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 rounded text-slate-300"
+              className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 disabled:opacity-40 rounded text-slate-700 shadow-sm"
             >
               Prev
             </button>
             <button
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages || totalPages === 0}
-              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 rounded text-slate-300"
+              className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 disabled:opacity-40 rounded text-slate-700 shadow-sm"
             >
               Next
             </button>
@@ -320,44 +320,44 @@ export const ScholarshipApplicationsPage: React.FC<ScholarshipApplicationsPagePr
 
       {/* Submit Application Modal */}
       {isSubmitModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <Plus className="w-4 h-4 text-ibm-blue" />
                 <span>Submit Scholarship Application</span>
               </h3>
-              <button onClick={() => setIsSubmitModalOpen(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setIsSubmitModalOpen(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {submitError && (
-              <div className="p-3 bg-red-950/80 border border-red-700 rounded text-xs text-red-200 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+              <div className="p-3 bg-red-50 border border-red-200 rounded text-xs text-red-800 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
                 <span>{submitError}</span>
               </div>
             )}
 
             <form onSubmit={handleSubmitApplication} className="space-y-3 text-xs">
               <div>
-                <label className="text-slate-300 font-mono block mb-1">Student ID (Registered)</label>
+                <label className="text-slate-700 font-mono block mb-1">Student ID (Registered)</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. STU2024001"
                   value={submitForm.student_id}
                   onChange={(e) => setSubmitForm({ ...submitForm, student_id: e.target.value.toUpperCase() })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 font-mono text-emerald-400 uppercase"
+                  className="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 font-mono text-slate-900 uppercase focus:border-ibm-blue focus:ring-1 focus:ring-ibm-blue outline-none shadow-sm"
                 />
               </div>
 
               <div>
-                <label className="text-slate-300 font-mono block mb-1">Scholarship Scheme</label>
+                <label className="text-slate-700 font-mono block mb-1">Scholarship Scheme</label>
                 <select
                   value={submitForm.scheme_code}
                   onChange={(e) => setSubmitForm({ ...submitForm, scheme_code: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 font-mono"
+                  className="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 text-slate-900 font-mono focus:border-ibm-blue focus:ring-1 focus:ring-ibm-blue outline-none shadow-sm"
                 >
                   <option value="MERIT1">MERIT1 - State Post-Matric Merit Scholarship</option>
                   <option value="TECH02">TECH02 - Technical Excellence Endowment</option>
@@ -365,25 +365,25 @@ export const ScholarshipApplicationsPage: React.FC<ScholarshipApplicationsPagePr
               </div>
 
               <div>
-                <label className="text-slate-300 font-mono block mb-1">Bank Account Number</label>
+                <label className="text-slate-700 font-mono block mb-1">Bank Account Number</label>
                 <input
                   type="text"
                   required
                   value={submitForm.bank_account_no}
                   onChange={(e) => setSubmitForm({ ...submitForm, bank_account_no: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 font-mono text-slate-100"
+                  className="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 font-mono text-slate-900 focus:border-ibm-blue focus:ring-1 focus:ring-ibm-blue outline-none shadow-sm"
                 />
               </div>
 
               <div>
-                <label className="text-slate-300 font-mono block mb-1">Bank IFSC Code</label>
+                <label className="text-slate-700 font-mono block mb-1">Bank IFSC Code</label>
                 <input
                   type="text"
                   required
                   maxLength={11}
                   value={submitForm.bank_ifsc}
                   onChange={(e) => setSubmitForm({ ...submitForm, bank_ifsc: e.target.value.toUpperCase() })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 font-mono text-slate-100 uppercase"
+                  className="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 font-mono text-slate-900 uppercase focus:border-ibm-blue focus:ring-1 focus:ring-ibm-blue outline-none shadow-sm"
                 />
               </div>
 
@@ -391,14 +391,14 @@ export const ScholarshipApplicationsPage: React.FC<ScholarshipApplicationsPagePr
                 <button
                   type="button"
                   onClick={() => setIsSubmitModalOpen(false)}
-                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded"
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-4 py-1.5 bg-ibm-blue hover:bg-ibm-darkblue disabled:bg-slate-800 text-white rounded font-semibold flex items-center gap-1.5"
+                  className="px-4 py-1.5 bg-ibm-blue hover:bg-ibm-darkblue disabled:bg-slate-300 text-white rounded font-semibold flex items-center gap-1.5 shadow-sm"
                 >
                   {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>{isSubmitting ? 'Submitting...' : 'Submit Application'}</span>
@@ -411,27 +411,27 @@ export const ScholarshipApplicationsPage: React.FC<ScholarshipApplicationsPagePr
 
       {/* Bulk Upload Modal */}
       {isUploadModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-lg w-full p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Upload className="w-4 h-4 text-emerald-400" />
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Upload className="w-4 h-4 text-emerald-600" />
                 <span>Bulk Upload Applications Feed CSV</span>
               </h3>
-              <button onClick={() => setIsUploadModalOpen(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setIsUploadModalOpen(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {uploadMessage && (
-              <div className="p-3 bg-slate-950 border border-slate-700 rounded text-xs text-slate-200">
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded text-xs text-slate-800">
                 {uploadMessage}
               </div>
             )}
 
             <form onSubmit={handleBulkUpload} className="space-y-3 text-xs">
-              <p className="text-slate-400 text-[11px]">
-                Paste CSV data below with columns: <code className="text-emerald-400">student_id,scheme_code,bank_account_no,bank_ifsc</code>
+              <p className="text-slate-600 text-[11px]">
+                Paste CSV data below with columns: <code className="text-emerald-700 font-semibold">student_id,scheme_code,bank_account_no,bank_ifsc</code>
               </p>
 
               <textarea
@@ -440,21 +440,21 @@ export const ScholarshipApplicationsPage: React.FC<ScholarshipApplicationsPagePr
                 placeholder="student_id,scheme_code,bank_account_no,bank_ifsc&#10;STU2024001,MERIT1,9182374619283746,SBIN0001234"
                 value={csvContent}
                 onChange={(e) => setCsvContent(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded p-2.5 font-mono text-[11px] text-slate-100 focus:outline-none focus:border-ibm-blue"
+                className="w-full bg-white border border-slate-300 rounded p-2.5 font-mono text-[11px] text-slate-900 focus:outline-none focus:border-ibm-blue focus:ring-1 focus:ring-ibm-blue shadow-sm"
               ></textarea>
 
               <div className="flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsUploadModalOpen(false)}
-                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded"
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded"
                 >
                   Close
                 </button>
                 <button
                   type="submit"
                   disabled={isUploading}
-                  className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 text-white rounded font-semibold flex items-center gap-1.5"
+                  className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white rounded font-semibold flex items-center gap-1.5 shadow-sm"
                 >
                   {isUploading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>{isUploading ? 'Ingesting...' : 'Ingest Feed'}</span>
@@ -467,22 +467,22 @@ export const ScholarshipApplicationsPage: React.FC<ScholarshipApplicationsPagePr
 
       {/* 120-Byte Fixed Width Layout Inspector */}
       {selectedApp && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-2xl w-full p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-sm font-bold text-white">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-xl max-w-2xl w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <h3 className="text-sm font-bold text-slate-900">
                 COBOL 120-Byte Fixed-Width Record: {selectedApp.app_id}
               </h3>
-              <button onClick={() => setSelectedApp(null)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setSelectedApp(null)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <div className="space-y-2">
-              <div className="text-[11px] text-slate-400 font-mono">
+              <div className="text-[11px] text-slate-600 font-mono">
                 Exact dataset record formatted according to copybook SCHAPP.cpy (LRECL=120):
               </div>
-              <pre className="bg-slate-950 p-3 rounded font-mono text-[11px] text-ibm-cyan overflow-x-auto border border-slate-800 select-all">
+              <pre className="bg-slate-900 p-3 rounded font-mono text-[11px] text-cyan-400 overflow-x-auto border border-slate-800 select-all">
                 {format120ByteString(selectedApp)}
               </pre>
             </div>
@@ -490,7 +490,7 @@ export const ScholarshipApplicationsPage: React.FC<ScholarshipApplicationsPagePr
             <div className="flex justify-end">
               <button
                 onClick={() => setSelectedApp(null)}
-                className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs"
+                className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded text-xs font-semibold"
               >
                 Close
               </button>

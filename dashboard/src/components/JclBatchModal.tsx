@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X, Play, Terminal, CheckCircle2, AlertTriangle, Layers, Clock, Cpu } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Play, Terminal, CheckCircle2, Layers } from 'lucide-react';
 
 interface JclBatchModalProps {
   isOpen: boolean;
@@ -84,29 +84,29 @@ export const JclBatchModal: React.FC<JclBatchModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="bg-slate-900 border border-slate-700 w-full max-w-3xl rounded-lg shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="bg-white border border-slate-200 w-full max-w-3xl rounded-xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
         {/* Header */}
-        <div className="px-5 py-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-950/80">
+        <div className="px-5 py-3.5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-emerald-950/60 rounded text-emerald-400 border border-emerald-800">
+            <div className="p-2 bg-emerald-50 rounded text-emerald-700 border border-emerald-200">
               <Terminal className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-100 text-sm flex items-center gap-2">
+              <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
                 <span>JES2 JCL Batch Job Simulator & Spool Emulator</span>
-                <span className="text-[10px] font-mono bg-emerald-950 text-emerald-400 border border-emerald-800 px-1.5 py-0.5 rounded">
+                <span className="text-[10px] font-mono bg-emerald-50 text-emerald-800 border border-emerald-200 px-1.5 py-0.5 rounded font-semibold">
                   LOCAL SIMULATOR MODE
                 </span>
               </h3>
-              <p className="text-xs text-slate-400 font-mono">
+              <p className="text-xs text-slate-500 font-mono">
                 Simulated execution mirror for testing COBOL & JCL pipeline rules locally prior to z/OS submission
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition-colors"
+            className="text-slate-400 hover:text-slate-700 p-1 rounded hover:bg-slate-200 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -115,7 +115,7 @@ export const JclBatchModal: React.FC<JclBatchModalProps> = ({
         {/* Body */}
         <div className="p-5 space-y-4 overflow-y-auto">
           {/* Job Selection Tabs */}
-          <div className="flex items-center justify-between bg-slate-950 p-1.5 rounded border border-slate-800">
+          <div className="flex items-center justify-between bg-slate-100 p-1.5 rounded-lg border border-slate-200">
             <div className="flex gap-1">
               {(['BATELG01', 'IDCDEF01', 'COMPCOB'] as const).map(job => (
                 <button
@@ -131,22 +131,22 @@ export const JclBatchModal: React.FC<JclBatchModalProps> = ({
                   className={`px-3 py-1.5 rounded text-xs font-mono font-medium transition-colors ${
                     selectedJob === job
                       ? 'bg-ibm-blue text-white shadow-sm font-semibold'
-                      : 'text-slate-400 hover:text-slate-200'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   //{job} JOB
                 </button>
               ))}
             </div>
-            <div className="text-[11px] font-mono text-slate-400 pr-2">
+            <div className="text-[11px] font-mono text-slate-500 pr-2">
               CLASS=A • MSGCLASS=X
             </div>
           </div>
 
           {/* Job Steps Progress Diagram */}
-          <div className="bg-slate-950/60 p-3 rounded border border-slate-800 space-y-2">
-            <div className="text-xs font-semibold text-slate-300 flex items-center gap-2">
-              <Layers className="w-3.5 h-3.5 text-ibm-cyan" />
+          <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-2">
+            <div className="text-xs font-semibold text-slate-700 flex items-center gap-2">
+              <Layers className="w-3.5 h-3.5 text-ibm-blue" />
               <span>Job Execution Pipeline Steps:</span>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -158,17 +158,17 @@ export const JclBatchModal: React.FC<JclBatchModalProps> = ({
                     key={st.step}
                     className={`p-2 rounded border text-xs font-mono transition-all ${
                       isPast
-                        ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300'
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800 font-medium'
                         : isCurrent
-                        ? 'bg-ibm-blue/20 border-ibm-blue text-white shadow animate-pulse'
-                        : 'bg-slate-900 border-slate-800 text-slate-500'
+                        ? 'bg-blue-50 border-ibm-blue text-ibm-blue font-bold shadow-sm animate-pulse'
+                        : 'bg-white border-slate-200 text-slate-400'
                     }`}
                   >
                     <div className="flex items-center justify-between text-[11px] font-bold">
                       <span>{st.step}</span>
                       <span>{isPast ? 'RC 0000' : isCurrent ? 'BUSY' : 'WAIT'}</span>
                     </div>
-                    <div className="text-[10px] text-slate-400 truncate mt-0.5">
+                    <div className="text-[10px] text-slate-500 truncate mt-0.5">
                       {st.pgm}: {st.desc}
                     </div>
                   </div>
@@ -178,8 +178,8 @@ export const JclBatchModal: React.FC<JclBatchModalProps> = ({
           </div>
 
           {/* SYSOUT Terminal Window */}
-          <div className="bg-black rounded-lg border border-slate-800 p-3.5 font-mono text-xs overflow-hidden shadow-inner">
-            <div className="flex items-center justify-between text-[11px] text-slate-400 pb-2 border-b border-slate-900 mb-2">
+          <div className="bg-slate-950 rounded-lg border border-slate-800 p-3.5 font-mono text-xs overflow-hidden shadow-inner">
+            <div className="flex items-center justify-between text-[11px] text-slate-400 pb-2 border-b border-slate-800 mb-2">
               <span className="flex items-center gap-1.5 text-emerald-400 font-semibold">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-ping"></span>
                 JES2 SPOOL / SYSOUT LOG
@@ -188,7 +188,7 @@ export const JclBatchModal: React.FC<JclBatchModalProps> = ({
             </div>
             <div className="min-h-52 max-h-64 overflow-y-auto space-y-1 text-slate-300 text-[11px] leading-relaxed">
               {logs.length === 0 ? (
-                <div className="text-slate-600 italic py-10 text-center">
+                <div className="text-slate-500 italic py-10 text-center">
                   Job queued in JES2 reader. Click "Submit JCL Job" to trigger batch execution.
                 </div>
               ) : (
@@ -214,18 +214,18 @@ export const JclBatchModal: React.FC<JclBatchModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between">
+        <div className="px-5 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
           <button
             type="button"
             onClick={onClose}
-            className="text-xs text-slate-400 hover:text-white px-3 py-1.5 rounded hover:bg-slate-800 transition-colors"
+            className="text-xs text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded hover:bg-slate-200 transition-colors font-medium"
           >
             Close Terminal
           </button>
           <div className="flex items-center gap-3">
             {status === 'COMPLETED' && (
-              <span className="text-xs font-mono text-emerald-400 font-semibold flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4" />
+              <span className="text-xs font-mono text-emerald-700 font-bold flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                 RETURN CODE: 0000
               </span>
             )}
@@ -233,10 +233,10 @@ export const JclBatchModal: React.FC<JclBatchModalProps> = ({
               type="button"
               onClick={runBatchSimulation}
               disabled={status === 'RUNNING'}
-              className={`text-xs font-semibold px-4 py-2 rounded flex items-center gap-2 transition-all ${
+              className={`text-xs font-semibold px-4 py-2 rounded flex items-center gap-2 transition-all shadow-sm ${
                 status === 'RUNNING'
-                  ? 'bg-slate-800 text-slate-400 cursor-not-allowed'
-                  : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow active:scale-95'
+                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                  : 'bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95'
               }`}
             >
               <Play className="w-3.5 h-3.5 fill-current" />

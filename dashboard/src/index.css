@@ -4,42 +4,40 @@
 
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-100 font-sans;
+    @apply bg-slate-50 text-slate-900 font-sans;
   }
 }
 
-/* Custom scrollbar for mainframe tables & terminals */
+/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: #f1f5f9;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #cbd5e1;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #94a3b8;
 }
 
 .terminal-green {
-  color: #00ff66;
-  text-shadow: 0 0 5px rgba(0, 255, 102, 0.4);
+  color: #047857;
 }
 
 .terminal-amber {
-  color: #ffb000;
-  text-shadow: 0 0 5px rgba(255, 176, 0, 0.4);
+  color: #b45309;
 }
 
 .greenbar-row:nth-child(even) {
-  background-color: rgba(30, 41, 59, 0.4);
+  background-color: #f8fafc;
 }
 .greenbar-row:nth-child(odd) {
-  background-color: rgba(15, 23, 42, 0.6);
+  background-color: #ffffff;
 }

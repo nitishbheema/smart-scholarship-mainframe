@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Upload, FileText, CheckCircle2, AlertCircle, FileCode, RefreshCw } from 'lucide-react';
+import { X, Upload, CheckCircle2, AlertCircle, FileCode, RefreshCw } from 'lucide-react';
 import { EligibilityResult, DisbursementRecord, Student, Application, BatchSummary } from '../types';
 
 interface MainframeReportImportModalProps {
@@ -136,7 +136,6 @@ export const MainframeReportImportModal: React.FC<MainframeReportImportModalProp
         lines.forEach(l => {
           const trimmed = l.trim();
           if (trimmed.startsWith('APP')) {
-            // Check if fixed column layout
             const line = l.startsWith(' ') ? l.substring(1) : l;
             const app_id = line.substring(0, 10).trim();
             const stu_id = line.substring(11, 21).trim();
@@ -293,26 +292,26 @@ TBAT2024101000005000007500000HASH982736451000                                   
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
-      <div className="bg-slate-900 border border-slate-700 w-full max-w-2xl rounded-lg shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="bg-white border border-slate-200 w-full max-w-2xl rounded-xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/80">
+        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-ibm-blue/20 rounded text-ibm-blue border border-ibm-blue/40">
+            <div className="p-2 bg-blue-50 rounded text-ibm-blue border border-blue-200">
               <Upload className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-100 text-sm">
+              <h3 className="font-bold text-slate-900 text-sm">
                 Mainframe Report & Dataset Ingest Engine
               </h3>
-              <p className="text-xs text-slate-400 font-mono">
+              <p className="text-xs text-slate-500 font-mono">
                 Supports fixed-width 132-col ANSI SYSOUT, APBS Datasets, CSV & JSON
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition-colors"
+            className="text-slate-400 hover:text-slate-700 p-1 rounded hover:bg-slate-200 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -322,47 +321,47 @@ TBAT2024101000005000007500000HASH982736451000                                   
         <div className="p-5 space-y-4 overflow-y-auto">
           {/* Quick Preset Buttons */}
           <div>
-            <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+            <label className="text-xs font-semibold text-slate-700 block mb-1.5">
               Quick Test Presets (Generated from COBOL Execution):
             </label>
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => loadSampleFile('eligible')}
-                className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded border border-slate-700 flex items-center gap-1.5 transition-colors"
+                className="text-xs bg-white hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-300 flex items-center gap-1.5 transition-colors shadow-sm font-medium"
               >
-                <FileCode className="w-3.5 h-3.5 text-emerald-400" />
+                <FileCode className="w-3.5 h-3.5 text-emerald-600" />
                 Eligible Students Report (132-Col)
               </button>
               <button
                 type="button"
                 onClick={() => loadSampleFile('rejected')}
-                className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded border border-slate-700 flex items-center gap-1.5 transition-colors"
+                className="text-xs bg-white hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-300 flex items-center gap-1.5 transition-colors shadow-sm font-medium"
               >
-                <FileCode className="w-3.5 h-3.5 text-rose-400" />
+                <FileCode className="w-3.5 h-3.5 text-rose-600" />
                 Rejected Students Report (132-Col)
               </button>
               <button
                 type="button"
                 onClick={() => loadSampleFile('disbursement')}
-                className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded border border-slate-700 flex items-center gap-1.5 transition-colors"
+                className="text-xs bg-white hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-300 flex items-center gap-1.5 transition-colors shadow-sm font-medium"
               >
-                <FileCode className="w-3.5 h-3.5 text-indigo-400" />
+                <FileCode className="w-3.5 h-3.5 text-indigo-600" />
                 Disbursement Instruction (.dat)
               </button>
             </div>
           </div>
 
           {/* File Upload Drop Zone */}
-          <div className="border-2 border-dashed border-slate-700 rounded-lg p-6 text-center hover:border-ibm-blue/60 transition-colors bg-slate-950/40">
+          <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-ibm-blue transition-colors bg-slate-50">
             <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-            <p className="text-xs text-slate-300 font-medium">
+            <p className="text-xs text-slate-800 font-semibold">
               Upload Mainframe Output File from your local disk
             </p>
-            <p className="text-[11px] text-slate-400 mt-1">
+            <p className="text-[11px] text-slate-500 mt-1">
               Supports .txt, .rpt, .dat, .csv, .json generated by MAIN0001 / RPT5001
             </p>
-            <label className="mt-3 inline-block cursor-pointer bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-4 py-2 rounded border border-slate-600 transition-colors">
+            <label className="mt-3 inline-block cursor-pointer bg-white hover:bg-slate-100 text-slate-800 text-xs font-semibold px-4 py-2 rounded-lg border border-slate-300 shadow-sm transition-colors">
               Browse Local File
               <input
                 type="file"
@@ -375,16 +374,16 @@ TBAT2024101000005000007500000HASH982736451000                                   
 
           {/* Detection Status */}
           {detectedType && (
-            <div className="bg-slate-950 p-3 rounded border border-slate-800 space-y-1.5">
+            <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-1.5">
               <div className="flex items-center justify-between text-xs font-mono">
-                <span className="text-slate-400">File: {fileName}</span>
-                <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
+                <span className="text-slate-600">File: {fileName}</span>
+                <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                   {detectedType}
                 </span>
               </div>
               {parsedPreview && (
-                <div className="text-xs text-slate-300 font-medium">
+                <div className="text-xs text-slate-800 font-medium">
                   {parsedPreview.details}
                 </div>
               )}
@@ -394,29 +393,29 @@ TBAT2024101000005000007500000HASH982736451000                                   
           {/* Raw Preview Box */}
           {fileContent && (
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1">
+              <label className="text-xs font-semibold text-slate-700 block mb-1">
                 Raw Content Preview:
               </label>
-              <pre className="bg-slate-950 p-3 rounded border border-slate-800 text-[11px] font-mono text-emerald-400 max-h-44 overflow-auto whitespace-pre">
+              <pre className="bg-slate-950 p-3 rounded-lg border border-slate-800 text-[11px] font-mono text-emerald-400 max-h-44 overflow-auto whitespace-pre shadow-inner">
                 {fileContent}
               </pre>
             </div>
           )}
 
           {errorMsg && (
-            <div className="p-3 bg-rose-950/40 border border-rose-800 text-rose-300 text-xs rounded flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="p-3 bg-red-50 border border-red-200 text-red-800 text-xs rounded-lg flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
               <span>{errorMsg}</span>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between">
+        <div className="px-5 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
           <button
             type="button"
             onClick={onClose}
-            className="text-xs text-slate-400 hover:text-white px-3 py-1.5 rounded hover:bg-slate-800 transition-colors"
+            className="text-xs text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded hover:bg-slate-200 transition-colors font-medium"
           >
             Cancel
           </button>
@@ -424,10 +423,10 @@ TBAT2024101000005000007500000HASH982736451000                                   
             type="button"
             onClick={handleApplyImport}
             disabled={!fileContent}
-            className={`text-xs font-semibold px-4 py-2 rounded flex items-center gap-1.5 transition-all ${
+            className={`text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-1.5 transition-all shadow-sm ${
               fileContent
-                ? 'bg-ibm-blue hover:bg-ibm-darkblue text-white shadow active:scale-95'
-                : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                ? 'bg-ibm-blue hover:bg-ibm-darkblue text-white active:scale-95'
+                : 'bg-slate-200 text-slate-400 cursor-not-allowed'
             }`}
           >
             <RefreshCw className="w-3.5 h-3.5" />
