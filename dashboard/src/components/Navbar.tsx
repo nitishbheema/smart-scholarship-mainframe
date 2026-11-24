@@ -40,7 +40,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="text-slate-600">•</span>
             <span className="inline-flex items-center gap-1 text-emerald-400 font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              JES2 ACTIVE
+              BATCH ENGINE: SIMULATED (READY)
             </span>
           </p>
         </div>
@@ -55,7 +55,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           title="Submit BATELG01 Batch Job"
         >
           <Play className="w-3.5 h-3.5 fill-current" />
-          <span>Execute JCL Batch</span>
+          <span>Execute JCL Batch (Simulated)</span>
         </button>
 
         {/* Import COBOL Report */}

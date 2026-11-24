@@ -23,4 +23,4 @@
            05  DISB-VALUE-DATE             PIC X(08).
            05  DISB-UTR-NUMBER             PIC X(16).
            05  DISB-BATCH-ID               PIC X(10).
-           05  DISB-FILLER                 PIC X(15).
+           05  DISB-FILLER                 PIC X(14).

@@ -130,34 +130,62 @@ export const MainframeReportImportModal: React.FC<MainframeReportImportModalProp
       // If 132-Column Report
       if (detectedType.includes('SYSOUT')) {
         const lines = fileContent.split('\n');
-        const eligibleList: EligibilityResult[] = [];
+        const parsedList: EligibilityResult[] = [];
         const isEligibleReport = fileContent.includes('ELIGIBLE STUDENTS AWARD ROSTER');
 
         lines.forEach(l => {
           const trimmed = l.trim();
           if (trimmed.startsWith('APP')) {
-            const parts = trimmed.split(/\s{2,}/);
-            if (parts.length >= 7) {
-              const app_id = parts[0]?.trim();
-              const stu_id = parts[1]?.trim();
-              const stu_name = parts[2]?.trim();
-              const sch_code = parts[3]?.trim();
-              const cgpa = parseFloat(parts[4]) || 8.0;
-              const attn = parseFloat(parts[5]?.replace('%', '')) || 85.0;
+            // Check if fixed column layout
+            const line = l.startsWith(' ') ? l.substring(1) : l;
+            const app_id = line.substring(0, 10).trim();
+            const stu_id = line.substring(11, 21).trim();
+            const stu_name = line.substring(22, 52).trim();
+            const sch_code = line.substring(53, 60).trim();
+            const cgpaStr = line.substring(61, 67).trim();
+            const attnStr = line.substring(68, 77).trim().replace('%', '');
+            const incStr = line.substring(78, 93).trim().replace(/,/g, '');
+            const arrStr = line.substring(94, 98).trim();
 
-              eligibleList.push({
+            const cgpa = parseFloat(cgpaStr) || 8.0;
+            const attn = parseFloat(attnStr) || 80.0;
+            const income = parseFloat(incStr) || 180000;
+            const arrears = parseInt(arrStr) || 0;
+
+            if (isEligibleReport) {
+              const awardStr = line.substring(99, 114).trim().replace(/,/g, '');
+              const award = parseFloat(awardStr) || 15000;
+              parsedList.push({
                 app_id,
                 stu_id,
                 stu_name,
                 sch_code,
                 cgpa,
                 attendance: attn,
-                income: 180000,
-                arrears: 0,
-                status: isEligibleReport ? 'E' : 'R',
-                reason_code: isEligibleReport ? 'NONE      ' : 'REJ-CGPA  ',
-                reason_desc: isEligibleReport ? 'Eligible via COBOL' : 'Rejected via COBOL',
-                award: isEligibleReport ? 15000 : 0,
+                income,
+                arrears,
+                status: 'E',
+                reason_code: 'NONE      ',
+                reason_desc: 'Eligible via COBOL SCH2001',
+                award,
+                batch_id: 'BAT2024101'
+              });
+            } else {
+              const reason_code = line.substring(99, 110).trim();
+              const reason_desc = line.substring(111).trim();
+              parsedList.push({
+                app_id,
+                stu_id,
+                stu_name,
+                sch_code,
+                cgpa,
+                attendance: attn,
+                income,
+                arrears,
+                status: 'R',
+                reason_code: reason_code || 'REJ-CGPA  ',
+                reason_desc: reason_desc || 'Disqualified via COBOL',
+                award: 0,
                 batch_id: 'BAT2024101'
               });
             }
@@ -165,9 +193,49 @@ export const MainframeReportImportModal: React.FC<MainframeReportImportModalProp
         });
 
         if (isEligibleReport) {
-          onImportSuccess({ eligible: eligibleList });
+          onImportSuccess({ eligible: parsedList });
         } else {
-          onImportSuccess({ rejected: eligibleList });
+          onImportSuccess({ rejected: parsedList });
+        }
+        onClose();
+        return;
+      }
+
+      // If APBS Payment Instruction File
+      if (detectedType.includes('PAYMENT INSTRUCTION')) {
+        const lines = fileContent.split('\n');
+        const disbList: DisbursementRecord[] = [];
+        lines.forEach(l => {
+          if (l.startsWith('D')) {
+            const ref_id = l.substring(1, 13).trim();
+            const app_id = l.substring(13, 23).trim();
+            const stu_id = l.substring(23, 33).trim();
+            const amtStr = l.substring(33, 42).trim();
+            const bank_ac_num = l.substring(42, 60).trim();
+            const bank_ifsc = l.substring(60, 71).trim();
+            const status = l.substring(71, 72).trim() as any;
+            const value_date = l.substring(72, 80).trim();
+            const utr_num = l.substring(80, 96).trim();
+            const batch_id = l.substring(96, 106).trim();
+
+            disbList.push({
+              rec_type: 'D',
+              ref_id,
+              app_id,
+              stu_id,
+              amount: (parseInt(amtStr) || 0) / 100,
+              bank_ac_num,
+              bank_ifsc,
+              status: status === 'S' ? 'S' : 'P',
+              value_date,
+              utr_num,
+              batch_id
+            });
+          }
+        });
+
+        if (disbList.length > 0) {
+          onImportSuccess({ disbursements: disbList });
         }
         onClose();
         return;

@@ -94,13 +94,13 @@ export const JclBatchModal: React.FC<JclBatchModalProps> = ({
             </div>
             <div>
               <h3 className="font-bold text-slate-100 text-sm flex items-center gap-2">
-                <span>IBM z/OS JES2 JCL Batch Job Runner</span>
+                <span>JES2 JCL Batch Job Simulator & Spool Emulator</span>
                 <span className="text-[10px] font-mono bg-emerald-950 text-emerald-400 border border-emerald-800 px-1.5 py-0.5 rounded">
-                  SUBSYSTEM: DSN1
+                  LOCAL SIMULATOR MODE
                 </span>
               </h3>
               <p className="text-xs text-slate-400 font-mono">
-                Real-time JCL job submission, step execution, and SYSOUT spool inspection
+                Simulated execution mirror for testing COBOL & JCL pipeline rules locally prior to z/OS submission
               </p>
             </div>
           </div>

@@ -20,17 +20,17 @@ export const BatchProcessingHistoryPage: React.FC<BatchProcessingHistoryPageProp
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] font-mono bg-emerald-950 text-emerald-400 border border-emerald-800 px-2 py-0.5 rounded font-bold">
-              JES2 SUBSYSTEM LOG
+              JES2 SPOOL EMULATOR (LOCAL TESTBED)
             </span>
             <span className="text-xs text-slate-400 font-mono">
-              SPOOL HELD OUTPUT • CLASS=A MSGCLASS=X
+              TARGET z/OS LPAR: USERID.SCHOLAR.* • CLASS=A MSGCLASS=X
             </span>
           </div>
           <h2 className="text-xl font-bold text-white tracking-tight">
             Batch Processing Execution History & JCL Ledger
           </h2>
           <p className="text-xs text-slate-400 font-mono">
-            Audit history of batch jobs submitted to IBM z/OS JES2 reader with step return codes and SYSOUT logs
+            Audit history of batch jobs executed locally and prepared for IBM z/OS JES2 reader with step return codes
           </p>
         </div>
 

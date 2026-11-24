@@ -30,4 +30,4 @@
            05  ELG-PROCESSED-DATE          PIC X(08).
            05  ELG-PROCESSED-TIME          PIC X(06).
            05  ELG-BATCH-ID                PIC X(10).
-           05  ELG-FILLER                  PIC X(20).
+           05  ELG-FILLER                  PIC X(29).

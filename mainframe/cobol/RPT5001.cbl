@@ -61,9 +61,10 @@
 
        01  RPT-ELIG-COL-HDR.
            05  CC-ECH                  PIC X(01) VALUE ' '.
-           05  FILLER                  PIC X(132) VALUE
-           'APP ID     STU ID     NAME                           SCHEME ' &
-           '  CGPA   ATTN%   FAMILY INCOME  ARRS  AWARD (INR)  STATUS'.
+           05  ECH-PART1               PIC X(66) VALUE
+               'APP ID     STU ID     NAME                           SCHEME '.
+           05  ECH-PART2               PIC X(66) VALUE
+               '  CGPA   ATTN%   FAMILY INCOME  ARRS  AWARD (INR)  STATUS    '.
 
        01  RPT-ELIG-DETAIL-LINE.
            05  CC-EDET                 PIC X(01) VALUE ' '.
@@ -91,10 +92,10 @@
 
        01  RPT-REJ-COL-HDR.
            05  CC-RCH                  PIC X(01) VALUE ' '.
-           05  FILLER                  PIC X(132) VALUE
-           'APP ID     STU ID     NAME                           SCHEME ' &
-           '  CGPA   ATTN%   FAMILY INCOME  ARRS  REASON CODE REJECTION' &
-           ' DESCRIPTION'.
+           05  RCH-PART1               PIC X(66) VALUE
+               'APP ID     STU ID     NAME                           SCHEME '.
+           05  RCH-PART2               PIC X(66) VALUE
+               '  CGPA   ATTN%   FAMILY INCOME  ARRS  REASON CODE REJECTION DESC'.
 
        01  RPT-REJ-DETAIL-LINE.
            05  CC-RDET                 PIC X(01) VALUE ' '.
@@ -102,21 +103,21 @@
            05  FILLER                  PIC X(01) VALUE SPACES.
            05  R-DET-STU-ID            PIC X(10).
            05  FILLER                  PIC X(01) VALUE SPACES.
-           05  R-DET-STU-NAME          PIC X(30).
+           05  R-DET-STU-NAME          PIC X(25).
            05  FILLER                  PIC X(01) VALUE SPACES.
            05  R-DET-SCH-CODE          PIC X(06).
-           05  FILLER                  PIC X(02) VALUE SPACES.
+           05  FILLER                  PIC X(01) VALUE SPACES.
            05  R-DET-CGPA              PIC Z9.99.
-           05  FILLER                  PIC X(02) VALUE SPACES.
+           05  FILLER                  PIC X(01) VALUE SPACES.
            05  R-DET-ATTN              PIC ZZ9.99.
            05  FILLER                  PIC X(01) VALUE '%'.
-           05  FILLER                  PIC X(02) VALUE SPACES.
+           05  FILLER                  PIC X(01) VALUE SPACES.
            05  R-DET-INCOME            PIC ZZZ,ZZ9.99.
-           05  FILLER                  PIC X(03) VALUE SPACES.
+           05  FILLER                  PIC X(02) VALUE SPACES.
            05  R-DET-ARREARS           PIC Z9.
            05  FILLER                  PIC X(02) VALUE SPACES.
            05  R-DET-REASON-CODE       PIC X(10).
-           05  FILLER                  PIC X(01) VALUE SPACES.
+           05  FILLER                  PIC X(02) VALUE SPACES.
            05  R-DET-REASON-DESC       PIC X(30).
            05  FILLER                  PIC X(05) VALUE SPACES.
 

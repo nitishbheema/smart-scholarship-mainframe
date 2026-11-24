@@ -49,7 +49,7 @@
            10  H-AUD-RECS-ELIG             PIC S9(09) COMP-4.
            10  H-AUD-RECS-REJ              PIC S9(09) COMP-4.
            10  H-AUD-RECS-DUP              PIC S9(09) COMP-4.
-           10  H-AUD-TOTAL-AMOUNT          PIC S9(09)V99 COMP-3.
+           10  H-AUD-TOTAL-AMOUNT          PIC S9(10)V99 COMP-3.
            10  H-AUD-RETURN-CODE           PIC S9(04) COMP-4.
            10  H-AUD-START-TS              PIC X(26).
            10  H-AUD-END-TS                PIC X(26).
