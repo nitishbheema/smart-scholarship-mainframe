@@ -1,0 +1,27 @@
+services:
+  # 1. Web Service (Backend REST API + Native COBOL Engine)
+  - type: web
+    name: smart-scholarship-backend
+    runtime: docker
+    dockerfilePath: Dockerfile
+    plan: free
+    region: oregon
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: scholarship-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+
+databases:
+  # 2. Managed PostgreSQL Relational Database
+  - name: scholarship-db
+    databaseName: scholarship_db
+    user: postgres
+    plan: free
+    region: oregon

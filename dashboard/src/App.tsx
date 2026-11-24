@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PageType, UserSession, Student, Application, EligibilityResult, DisbursementRecord, ExceptionRecord, BatchSummary, SystemConfig, JclJobExecution } from './types';
 import { 
   INITIAL_STUDENTS, 
@@ -11,6 +11,7 @@ import {
   INITIAL_JOB_EXECUTIONS 
 } from './data/initialData';
 
+import { api } from './services/api';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
 import { JclBatchModal } from './components/JclBatchModal';
@@ -46,6 +47,153 @@ export const App: React.FC = () => {
 
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isBackendLive, setIsBackendLive] = useState<boolean>(false);
+  const [isExecutingCobol, setIsExecutingCobol] = useState<boolean>(false);
+  const [liveExecutionMessage, setLiveExecutionMessage] = useState<string | null>(null);
+
+  // Sync state with live PostgreSQL & GnuCOBOL Backend
+  const loadBackendData = async () => {
+    try {
+      const health = await api.getHealth();
+      if (health.status === 'ONLINE') {
+        setIsBackendLive(true);
+        const [sumRes, stuRes, appRes, jobRes, disbRes, eligRes] = await Promise.allSettled([
+          api.getDashboardSummary(),
+          api.getStudents(),
+          api.getApplications(),
+          api.getBatchJobs(),
+          api.getDisbursements(),
+          api.getEligibilityResults(),
+        ]);
+
+        if (stuRes.status === 'fulfilled' && stuRes.value.students) {
+          setStudents(stuRes.value.students.map((s: any) => ({
+            stu_id: s.student_id,
+            name: s.name,
+            dob: '2004-05-15',
+            gender: 'U',
+            dept: s.department,
+            year: s.academic_year,
+            sem: (s.academic_year * 2),
+            email: s.email,
+            phone: '9876543210',
+            enroll_date: '2022-08-01',
+            status: s.status,
+            cgpa: parseFloat(s.cgpa),
+            attendance: parseFloat(s.attendance),
+            income: parseFloat(s.annual_family_income),
+            arrears: s.active_arrears,
+          })));
+        }
+
+        if (appRes.status === 'fulfilled' && appRes.value.applications) {
+          setApplications(appRes.value.applications.map((a: any) => ({
+            app_id: a.application_id,
+            stu_id: a.student_id,
+            sch_code: a.scheme_code,
+            app_date: (a.submission_date || '').slice(0, 10),
+            cgpa: parseFloat(a.cgpa),
+            attendance: parseFloat(a.attendance),
+            income: parseFloat(a.annual_family_income),
+            arrears: a.active_arrears,
+            bank_ac_num: a.bank_account_no,
+            bank_ifsc: a.bank_ifsc,
+            status: a.status,
+            award_amount: parseFloat(a.award_amount || 0),
+          })));
+        }
+
+        if (eligRes.status === 'fulfilled' && eligRes.value.results && eligRes.value.results.length > 0) {
+          setEligibilityResults(eligRes.value.results.map((e: any) => ({
+            app_id: e.application_id,
+            stu_id: e.student_id,
+            stu_name: e.student_name || 'STUDENT',
+            dept: e.department || 'GEN',
+            sch_code: e.scheme_code,
+            cgpa: parseFloat(e.cgpa),
+            attendance: parseFloat(e.attendance),
+            income: parseFloat(e.annual_family_income),
+            arrears: e.active_arrears,
+            status: e.status,
+            reason_code: e.reason_code,
+            reason_desc: e.reason_code === 'NONE      ' ? 'Meets eligibility requirements' : e.reason_code,
+            award: parseFloat(e.award_amount || 0),
+            batch_id: e.batch_id,
+          })));
+        }
+
+        if (disbRes.status === 'fulfilled' && disbRes.value.disbursements && disbRes.value.disbursements.length > 0) {
+          setDisbursements(disbRes.value.disbursements.map((d: any) => ({
+            disb_id: d.disbursement_id,
+            app_id: d.application_id,
+            stu_id: d.student_id,
+            stu_name: d.student_name || 'STUDENT',
+            amount: parseFloat(d.award_amount),
+            bank_ac: d.bank_account_no,
+            ifsc: d.bank_ifsc,
+            status: d.payment_status,
+            batch_id: d.batch_id,
+            utr_num: d.utr_number || 'PENDING',
+            payment_date: d.payment_date || new Date().toISOString().slice(0, 10),
+          })));
+        }
+
+        if (sumRes.status === 'fulfilled' && sumRes.value.summary) {
+          const s = sumRes.value.summary;
+          setSummary(prev => ({
+            ...prev,
+            total_records: s.totalApplications,
+            eligible_count: s.eligibleApplications,
+            rejected_count: s.rejectedApplications,
+            total_disbursement_inr: s.totalDisbursed,
+          }));
+        }
+
+        if (jobRes.status === 'fulfilled' && jobRes.value.jobs && jobRes.value.jobs.length > 0) {
+          const mappedJobs: JclJobExecution[] = jobRes.value.jobs.map((j: any) => ({
+            jobId: j.batch_id,
+            jobName: j.job_name || 'BATELG01',
+            submitTime: (j.start_time || '').replace('T', ' ').slice(0, 19),
+            completionTime: (j.end_time || '').replace('T', ' ').slice(0, 19),
+            returnCode: j.return_code || 'RC 0000',
+            status: j.status,
+            steps: [
+              { stepName: 'ALLOC01', program: 'IEFBR14', rc: '0000', description: 'Dynamic dataset allocation' },
+              { stepName: 'RUNCOB', program: 'MAIN0001', rc: j.return_code?.replace('RC ', '') || '0000', description: j.execution_engine || 'GnuCOBOL Executable' },
+              { stepName: 'AUDITPG', program: 'POSTGRES', rc: '0000', description: 'PostgreSQL Relational Persistence' }
+            ],
+            sysoutLog: j.sysout_report ? j.sysout_report.split('\n') : [`BATCH ${j.batch_id} EXECUTED - STATUS ${j.status}`]
+          }));
+          setJobExecutions(mappedJobs);
+        }
+      }
+    } catch (e) {
+      setIsBackendLive(false);
+      console.log('Backend not detected; running in standalone client-side demo mode');
+    }
+  };
+
+  useEffect(() => {
+    loadBackendData();
+  }, []);
+
+  // Execute Real Compiled COBOL Batch via REST API
+  const handleExecuteLiveCobol = async () => {
+    setIsExecutingCobol(true);
+    setLiveExecutionMessage(null);
+    try {
+      const res = await api.executeCobolBatch();
+      await loadBackendData();
+      setLiveExecutionMessage(
+        `COBOL Binary MAIN0001 executed successfully! ${res.result.recordsEligible} Eligible Approved, ${res.result.recordsRejected} Rejected, INR ${res.result.totalDisbursement.toLocaleString()} Disbursed (${res.result.returnCode} in ${res.result.durationMs}ms)`
+      );
+      setTimeout(() => setLiveExecutionMessage(null), 8000);
+    } catch (err: any) {
+      alert(`COBOL Batch Execution Error: ${err.message}. If backend server is offline, please ensure the backend is started.`);
+    } finally {
+      setIsExecutingCobol(false);
+    }
+  };
 
   // Re-evaluate eligibility when config changes
   const handleUpdateConfig = (newConfig: SystemConfig) => {
@@ -175,7 +323,7 @@ export const App: React.FC = () => {
   };
 
   const handleJobSuccess = () => {
-    // Generate new execution log
+    loadBackendData();
     const now = new Date();
     const timeStr = now.toLocaleTimeString();
     const newJob: JclJobExecution = {
@@ -237,7 +385,26 @@ export const App: React.FC = () => {
         onLogout={() => {
           setActivePage('login');
         }}
+        isBackendLive={isBackendLive}
+        onExecuteLiveCobol={handleExecuteLiveCobol}
+        isExecutingCobol={isExecutingCobol}
       />
+
+      {/* Live Notification Banner */}
+      {liveExecutionMessage && (
+        <div className="bg-emerald-950 border-b border-emerald-600/40 px-4 py-2 text-xs font-mono text-emerald-300 flex items-center justify-between animate-fadeIn">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span>{liveExecutionMessage}</span>
+          </div>
+          <button
+            onClick={() => setLiveExecutionMessage(null)}
+            className="text-emerald-400 hover:text-white text-xs underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Main Layout Area */}
       <div className="flex flex-1 overflow-hidden">

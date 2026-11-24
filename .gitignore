@@ -32,3 +32,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
+
+# Local temp tools & runs
+temp_tools/
+temp_run/
+backend/temp_run/
+backend/dist/
+backend/node_modules/

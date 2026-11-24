@@ -1,5 +1,5 @@
 import React from 'react';
-import { Terminal, Upload, Play, Shield, Server, CheckCircle2 } from 'lucide-react';
+import { Terminal, Upload, Play, Cpu, CheckCircle2, RefreshCw } from 'lucide-react';
 import { UserSession } from '../types';
 
 interface NavbarProps {
@@ -7,13 +7,19 @@ interface NavbarProps {
   onOpenBatchModal: () => void;
   onOpenImportModal: () => void;
   onLogout: () => void;
+  isBackendLive?: boolean;
+  onExecuteLiveCobol?: () => void;
+  isExecutingCobol?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   session,
   onOpenBatchModal,
   onOpenImportModal,
-  onLogout
+  onLogout,
+  isBackendLive = false,
+  onExecuteLiveCobol,
+  isExecutingCobol = false,
 }) => {
   return (
     <header className="bg-slate-900 border-b border-slate-800 text-white sticky top-0 z-40 px-4 py-2.5 flex items-center justify-between shadow-md">
@@ -28,34 +34,59 @@ export const Navbar: React.FC<NavbarProps> = ({
               SMART SCHOLARSHIP
             </span>
             <span className="bg-ibm-blue/20 text-ibm-blue border border-ibm-blue/40 text-[10px] font-mono px-1.5 py-0.5 rounded font-semibold uppercase">
-              IBM z/OS Enterprise
+              IBM z/OS & GnuCOBOL 3.1
             </span>
+            {isBackendLive ? (
+              <span className="bg-emerald-950 text-emerald-400 border border-emerald-700/60 text-[10px] font-mono px-2 py-0.5 rounded-full flex items-center gap-1.5 font-bold shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                POSTGRESQL & COBOL ENGINE LIVE
+              </span>
+            ) : (
+              <span className="bg-amber-950/80 text-amber-300 border border-amber-700/50 text-[10px] font-mono px-2 py-0.5 rounded-full flex items-center gap-1 font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                STANDALONE PREVIEW MODE
+              </span>
+            )}
           </div>
           <p className="text-xs text-slate-400 font-mono flex items-center gap-2">
             <span>VSAM KSDS</span>
             <span className="text-slate-600">•</span>
-            <span>COBOL 6.3</span>
+            <span>Enterprise COBOL / GnuCOBOL</span>
             <span className="text-slate-600">•</span>
-            <span>Db2 DSN1</span>
+            <span>PostgreSQL & Db2 DDL</span>
             <span className="text-slate-600">•</span>
-            <span className="inline-flex items-center gap-1 text-emerald-400 font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              BATCH ENGINE: SIMULATED (READY)
-            </span>
+            <span className="text-emerald-400">RC 0000 / 0004</span>
           </p>
         </div>
       </div>
 
-      {/* Mainframe Action Controls */}
+      {/* Action Controls */}
       <div className="flex items-center gap-3">
-        {/* Run Batch Job */}
+        {/* Execute Real COBOL Engine */}
+        {onExecuteLiveCobol && (
+          <button
+            onClick={onExecuteLiveCobol}
+            disabled={isExecutingCobol}
+            className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white text-xs font-bold px-3.5 py-1.5 rounded-lg shadow-md transition-all active:scale-95 border border-emerald-400/30 disabled:opacity-50"
+            title="Execute compiled COBOL MAIN0001 executable directly via backend REST API"
+          >
+            {isExecutingCobol ? (
+              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Cpu className="w-3.5 h-3.5 text-emerald-200" />
+            )}
+            <span>{isExecutingCobol ? 'Executing COBOL Binary...' : '⚡ Run Native COBOL Batch'}</span>
+          </button>
+        )}
+
+        {/* JES2 JCL Spool Modal */}
         <button
           onClick={onOpenBatchModal}
-          className="flex items-center gap-2 bg-gradient-to-r from-ibm-blue to-ibm-darkblue hover:from-blue-600 hover:to-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded shadow transition-all active:scale-95 border border-blue-400/30"
-          title="Submit BATELG01 Batch Job"
+          className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded border border-slate-700 transition-colors"
+          title="Open JES2 JCL Batch Job Console"
         >
-          <Play className="w-3.5 h-3.5 fill-current" />
-          <span>Execute JCL Batch (Simulated)</span>
+          <Play className="w-3.5 h-3.5 text-blue-400" />
+          <span>JES2 JCL Console</span>
         </button>
 
         {/* Import COBOL Report */}
@@ -65,7 +96,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           title="Upload & Parse Mainframe SYSOUT / Reports"
         >
           <Upload className="w-3.5 h-3.5 text-ibm-cyan" />
-          <span>Import Mainframe SYSOUT</span>
+          <span>Import SYSOUT</span>
         </button>
 
         {/* User Session & Role Indicator */}
@@ -82,9 +113,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
           <button
             onClick={onLogout}
-            className="text-xs text-rose-400 hover:text-rose-300 font-medium px-2 py-1 rounded hover:bg-rose-950/40 border border-transparent hover:border-rose-900 transition-colors"
+            className="text-[10px] font-mono bg-slate-800 hover:bg-red-950/60 hover:text-red-400 text-slate-400 px-2 py-1 rounded border border-slate-700 transition-colors"
           >
-            Logout
+            Sign Out
           </button>
         </div>
       </div>

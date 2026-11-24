@@ -1,0 +1,25 @@
+{
+  "name": "smart-scholarship-mainframe",
+  "version": "1.0.0",
+  "description": "Smart Scholarship Eligibility & Disbursement Processing System - Hybrid IBM Mainframe & Modern Cloud Architecture",
+  "scripts": {
+    "build:backend": "cd backend && npm install && npm run build",
+    "build:frontend": "cd dashboard && npm install && npm run build",
+    "build": "npm run build:backend && npm run build:frontend",
+    "start": "cd backend && npm start",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd dashboard && npm run dev"
+  },
+  "keywords": [
+    "cobol",
+    "mainframe",
+    "zos",
+    "postgresql",
+    "react",
+    "express",
+    "gnucobol",
+    "scholarship-system"
+  ],
+  "author": "Antigravity Engineering Team",
+  "license": "MIT"
+}

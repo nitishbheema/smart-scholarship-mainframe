@@ -61,10 +61,12 @@
 
        01  RPT-ELIG-COL-HDR.
            05  CC-ECH                  PIC X(01) VALUE ' '.
-           05  ECH-PART1               PIC X(66) VALUE
-               'APP ID     STU ID     NAME                           SCHEME '.
-           05  ECH-PART2               PIC X(66) VALUE
-               '  CGPA   ATTN%   FAMILY INCOME  ARRS  AWARD (INR)  STATUS    '.
+           05  ECH-PART1               PIC X(45) VALUE
+               'APP ID     STU ID     NAME                   '.
+           05  ECH-PART2               PIC X(45) VALUE
+               '        SCHEME   CGPA   ATTN%   FAMILY INCOME'.
+           05  ECH-PART3               PIC X(42) VALUE
+               '  ARRS  AWARD (INR)  STATUS               '.
 
        01  RPT-ELIG-DETAIL-LINE.
            05  CC-EDET                 PIC X(01) VALUE ' '.
@@ -92,10 +94,12 @@
 
        01  RPT-REJ-COL-HDR.
            05  CC-RCH                  PIC X(01) VALUE ' '.
-           05  RCH-PART1               PIC X(66) VALUE
-               'APP ID     STU ID     NAME                           SCHEME '.
-           05  RCH-PART2               PIC X(66) VALUE
-               '  CGPA   ATTN%   FAMILY INCOME  ARRS  REASON CODE REJECTION DESC'.
+           05  RCH-PART1               PIC X(45) VALUE
+               'APP ID     STU ID     NAME                   '.
+           05  RCH-PART2               PIC X(45) VALUE
+               '        SCHEME   CGPA   ATTN%   FAMILY INCOME'.
+           05  RCH-PART3               PIC X(42) VALUE
+               '  ARRS  REASON CODE REJECTION DESC        '.
 
        01  RPT-REJ-DETAIL-LINE.
            05  CC-RDET                 PIC X(01) VALUE ' '.
@@ -126,7 +130,8 @@
            05  TOT-LABEL               PIC X(35).
            05  TOT-COUNT               PIC ZZZ,ZZ9.
            05  FILLER                  PIC X(15) VALUE SPACES.
-           05  TOT-AMT-LABEL           PIC X(20) VALUE 'TOTAL AMOUNT (INR): '.
+           05  TOT-AMT-LABEL           PIC X(20)
+               VALUE 'TOTAL AMOUNT (INR): '.
            05  TOT-AMOUNT              PIC Z,ZZZ,ZZ9.99.
            05  FILLER                  PIC X(40) VALUE SPACES.
 
