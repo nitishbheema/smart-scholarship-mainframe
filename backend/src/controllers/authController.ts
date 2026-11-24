@@ -2,9 +2,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { pool } from '../database/db';
-import { AuthenticatedRequest } from '../middleware/auth';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'scholarship-super-secret-key-2026';
+import { AuthenticatedRequest, getJwtSecret } from '../middleware/auth';
 
 export async function login(req: Request, res: Response) {
   const { username, password } = req.body;
@@ -14,25 +12,26 @@ export async function login(req: Request, res: Response) {
   }
 
   try {
-    const result = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+    const result = await pool.query('SELECT * FROM users WHERE username = $1', [username.trim()]);
     if (result.rows.length === 0) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ error: 'Invalid username or password' });
     }
 
     const user = result.rows[0];
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ error: 'Invalid username or password' });
     }
 
+    const secret = getJwtSecret();
     const token = jwt.sign(
       { id: user.id, username: user.username, role: user.role },
-      JWT_SECRET,
+      secret,
       { expiresIn: '24h' }
     );
 
     return res.json({
-      message: 'Login successful',
+      message: 'Authentication successful',
       token,
       user: {
         id: user.id,
@@ -42,8 +41,8 @@ export async function login(req: Request, res: Response) {
       },
     });
   } catch (err: any) {
-    console.error('Login error:', err);
-    return res.status(500).json({ error: 'Internal server error during authentication' });
+    console.error('Login error:', err.message || err);
+    return res.status(500).json({ error: 'Authentication service error' });
   }
 }
 
@@ -53,13 +52,16 @@ export async function getCurrentUser(req: AuthenticatedRequest, res: Response) {
   }
 
   try {
-    const result = await pool.query('SELECT id, username, email, role FROM users WHERE id = $1', [req.user.id]);
+    const result = await pool.query(
+      'SELECT id, username, email, role, created_at FROM users WHERE id = $1',
+      [req.user.id]
+    );
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: 'User profile not found' });
     }
 
     return res.json({ user: result.rows[0] });
   } catch (err: any) {
-    return res.status(500).json({ error: 'Failed to fetch user profile' });
+    return res.status(500).json({ error: 'Failed to retrieve user profile' });
   }
 }

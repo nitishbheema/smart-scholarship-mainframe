@@ -1,19 +1,41 @@
 import React, { useState } from 'react';
-import { Search, Filter, AlertTriangle, CheckCircle2, Download, Eye, X, FileCode } from 'lucide-react';
+import { Search, Filter, AlertTriangle, CheckCircle2, Download, Eye, X, Plus, Upload, Loader2, AlertCircle } from 'lucide-react';
 import { Application } from '../types';
+import { api } from '../services/api';
 
 interface ScholarshipApplicationsPageProps {
   applications: Application[];
+  onRefresh?: () => void;
+  isAdminOrOperator?: boolean;
 }
 
 export const ScholarshipApplicationsPage: React.FC<ScholarshipApplicationsPageProps> = ({
-  applications
+  applications,
+  onRefresh,
+  isAdminOrOperator = true,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
+
+  // Submit Application Modal State
+  const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitForm, setSubmitForm] = useState({
+    student_id: '',
+    scheme_code: 'MERIT1',
+    bank_account_no: '9182374619283746',
+    bank_ifsc: 'SBIN0001234',
+  });
+
+  // Bulk Upload Modal State
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [csvContent, setCsvContent] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState<string | null>(null);
 
   const filtered = applications.filter(a => {
     const matchSearch = a.app_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -25,6 +47,48 @@ export const ScholarshipApplicationsPage: React.FC<ScholarshipApplicationsPagePr
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
   const displayed = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const handleSubmitApplication = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      await api.createApplication(submitForm);
+      setIsSubmitModalOpen(false);
+      setSubmitForm({
+        student_id: '',
+        scheme_code: 'MERIT1',
+        bank_account_no: '9182374619283746',
+        bank_ifsc: 'SBIN0001234',
+      });
+      if (onRefresh) await onRefresh();
+    } catch (err: any) {
+      setSubmitError(err.message || 'Failed to submit application');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleBulkUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!csvContent.trim()) return;
+
+    setIsUploading(true);
+    setUploadMessage(null);
+
+    try {
+      const res = await api.bulkUploadApplications(csvContent);
+      setUploadMessage(`Upload completed: ${res.inserted} applications ingested.`);
+      setCsvContent('');
+      if (onRefresh) await onRefresh();
+      setTimeout(() => setIsUploadModalOpen(false), 1500);
+    } catch (err: any) {
+      setUploadMessage(`Upload failed: ${err.message}`);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const exportCsv = () => {
     const headers = "Application ID,Student ID,Scheme,Date,CGPA,Attendance %,Family Income,Arrears,Bank Account,IFSC,Status\n";
@@ -54,7 +118,7 @@ export const ScholarshipApplicationsPage: React.FC<ScholarshipApplicationsPagePr
       pad(a.app_id, 10) +
       pad(a.stu_id, 10) +
       pad(a.sch_code, 6) +
-      pad(a.app_date.replace(/-/g, ''), 8) +
+      pad((a.app_date || '').replace(/-/g, ''), 8) +
       padNum(cgpaInt, 4) +
       padNum(attnInt, 5) +
       padNum(incInt, 10) +
@@ -86,48 +150,80 @@ export const ScholarshipApplicationsPage: React.FC<ScholarshipApplicationsPagePr
           </p>
         </div>
 
-        <button
-          onClick={exportCsv}
-          className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3.5 py-2 rounded-lg border border-slate-700 transition-colors shadow-sm"
-        >
-          <Download className="w-4 h-4 text-ibm-cyan" />
-          <span>Export Feed CSV</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          {isAdminOrOperator && (
+            <>
+              <button
+                onClick={() => setIsSubmitModalOpen(true)}
+                className="flex items-center gap-1.5 bg-ibm-blue hover:bg-ibm-darkblue text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-sm transition-all"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Submit Application</span>
+              </button>
+
+              <button
+                onClick={() => setIsUploadModalOpen(true)}
+                className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 transition-colors shadow-sm"
+              >
+                <Upload className="w-4 h-4 text-emerald-400" />
+                <span>Bulk Upload</span>
+              </button>
+            </>
+          )}
+
+          <button
+            onClick={exportCsv}
+            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3.5 py-2 rounded-lg border border-slate-700 transition-colors shadow-sm"
+          >
+            <Download className="w-4 h-4 text-ibm-cyan" />
+            <span>Export Feed CSV</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter and Search Bar */}
       <div className="bg-slate-900 border border-slate-800 rounded-lg p-3.5 flex flex-col md:flex-row gap-3 items-center justify-between shadow-sm">
         <div className="relative w-full md:w-80">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-500" />
           <input
             type="text"
             placeholder="Search by App ID, Student ID, Scheme..."
             value={searchTerm}
-            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-            className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-ibm-blue font-mono"
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-ibm-blue font-mono"
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <Filter className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-xs text-slate-400">Status:</span>
-          {['ALL', 'PROCESSED', 'REJECTED', 'DUPLICATE', 'INVALID'].map(st => (
-            <button
-              key={st}
-              onClick={() => { setStatusFilter(st); setCurrentPage(1); }}
-              className={`px-2.5 py-1 rounded text-xs font-mono font-medium transition-colors ${
-                statusFilter === st
-                  ? 'bg-ibm-blue text-white font-semibold'
-                  : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
-              }`}
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="flex items-center gap-2">
+            <Filter className="w-3.5 h-3.5 text-slate-400" />
+            <span className="text-xs text-slate-400 font-mono">Status:</span>
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-ibm-blue font-mono"
             >
-              {st}
-            </button>
-          ))}
+              <option value="ALL">ALL STATUSES</option>
+              <option value="SUBMITTED">SUBMITTED</option>
+              <option value="PENDING_BATCH">PENDING BATCH</option>
+              <option value="ELIGIBLE">ELIGIBLE</option>
+              <option value="REJECTED">REJECTED</option>
+            </select>
+          </div>
+
+          <span className="text-xs text-slate-500 font-mono">
+            Showing {filtered.length} applications
+          </span>
         </div>
       </div>
 
-      {/* Applications Table */}
+      {/* Table */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-mono">
@@ -136,115 +232,85 @@ export const ScholarshipApplicationsPage: React.FC<ScholarshipApplicationsPagePr
                 <th className="py-3 px-4">Application ID</th>
                 <th className="py-3 px-4">Student ID</th>
                 <th className="py-3 px-4">Scheme</th>
+                <th className="py-3 px-4">Date</th>
                 <th className="py-3 px-4">CGPA</th>
-                <th className="py-3 px-4">Attn %</th>
-                <th className="py-3 px-4">Family Income (INR)</th>
-                <th className="py-3 px-4">Arrears</th>
-                <th className="py-3 px-4">Bank IFSC</th>
-                <th className="py-3 px-4">Batch Status</th>
-                <th className="py-3 px-4 text-right">COBOL 120B</th>
+                <th className="py-3 px-4">Attendance</th>
+                <th className="py-3 px-4">Income</th>
+                <th className="py-3 px-4">Bank Acct (Masked)</th>
+                <th className="py-3 px-4">Status</th>
+                <th className="py-3 px-4 text-center">Record</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
-              {displayed.length === 0 ? (
-                <tr>
-                  <td colSpan={10} className="py-8 text-center text-slate-500 italic">
-                    No application records match your filter criteria.
+              {displayed.map((a) => (
+                <tr key={a.app_id} className="greenbar-row hover:bg-slate-800/50 transition-colors">
+                  <td className="py-3 px-4 font-bold text-ibm-cyan">
+                    {a.app_id}
+                  </td>
+                  <td className="py-3 px-4 text-slate-300 font-medium">
+                    {a.stu_id}
+                  </td>
+                  <td className="py-3 px-4 text-slate-300">
+                    <span className="bg-blue-950 text-blue-300 border border-blue-800/60 px-2 py-0.5 rounded text-[10px] font-semibold">
+                      {a.sch_code}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-slate-400">
+                    {a.app_date}
+                  </td>
+                  <td className="py-3 px-4 font-semibold text-emerald-400">
+                    {a.cgpa.toFixed(2)}
+                  </td>
+                  <td className="py-3 px-4 text-slate-300">
+                    {a.attendance.toFixed(1)}%
+                  </td>
+                  <td className="py-3 px-4 text-slate-400">
+                    ₹{a.income.toLocaleString()}
+                  </td>
+                  <td className="py-3 px-4 text-slate-400">
+                    {'•••• •••• •••• ' + (a.bank_ac_num || '').slice(-4)}
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                      a.status === 'ELIGIBLE'
+                        ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                        : a.status === 'REJECTED'
+                        ? 'bg-red-950 text-red-400 border border-red-800'
+                        : 'bg-amber-950 text-amber-400 border border-amber-800'
+                    }`}>
+                      {a.status || 'SUBMITTED'}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <button
+                      onClick={() => setSelectedApp(a)}
+                      className="bg-slate-800 hover:bg-slate-700 text-ibm-cyan px-2 py-1 rounded text-[10px] transition-colors"
+                      title="Inspect 120-Byte Layout"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                    </button>
                   </td>
                 </tr>
-              ) : (
-                displayed.map((a) => {
-                  const isDup = a.is_duplicate || a.status === 'DUPLICATE';
-                  const isInv = a.status === 'INVALID';
-                  const isRej = a.status === 'REJECTED';
-                  return (
-                    <tr key={`${a.app_id}-${a.stu_id}`} className="greenbar-row hover:bg-slate-800/50 transition-colors">
-                      <td className="py-3 px-4 font-bold text-slate-200">
-                        {a.app_id}
-                      </td>
-                      <td className="py-3 px-4 text-ibm-cyan font-bold">
-                        {a.stu_id}
-                      </td>
-                      <td className="py-3 px-4 text-slate-300">
-                        <span className="bg-slate-800 px-1.5 py-0.5 rounded text-[11px] border border-slate-700">
-                          {a.sch_code}
-                        </span>
-                      </td>
-                      <td className={`py-3 px-4 font-semibold ${a.cgpa >= 7.5 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                        {a.cgpa.toFixed(2)}
-                      </td>
-                      <td className={`py-3 px-4 font-semibold ${a.attendance >= 75 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                        {a.attendance.toFixed(2)}%
-                      </td>
-                      <td className={`py-3 px-4 ${a.income <= 250000 ? 'text-slate-200' : 'text-rose-400 font-semibold'}`}>
-                        ₹{a.income.toLocaleString()}
-                      </td>
-                      <td className={`py-3 px-4 ${a.arrears === 0 ? 'text-slate-300' : 'text-rose-400 font-bold'}`}>
-                        {a.arrears}
-                      </td>
-                      <td className="py-3 px-4 text-slate-400">
-                        {a.bank_ifsc || <span className="text-rose-400 italic">[BLANK]</span>}
-                      </td>
-                      <td className="py-3 px-4">
-                        {isDup ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-950 text-amber-400 border border-amber-800">
-                            <AlertTriangle className="w-3 h-3" />
-                            DUPLICATE
-                          </span>
-                        ) : isInv ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-950 text-rose-400 border border-rose-800">
-                            INVALID
-                          </span>
-                        ) : isRej ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-950/60 text-rose-300 border border-rose-900">
-                            REJECTED
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-950 text-emerald-400 border border-emerald-800">
-                            <CheckCircle2 className="w-3 h-3" />
-                            PROCESSED
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <button
-                          onClick={() => setSelectedApp(a)}
-                          className="text-ibm-blue hover:text-blue-400 p-1 rounded hover:bg-blue-950/40 inline-flex items-center gap-1 transition-colors text-[11px]"
-                          title="Inspect 120-Byte COBOL Fixed-Width Record Layout"
-                        >
-                          <FileCode className="w-3.5 h-3.5" />
-                          <span>View</span>
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
+              ))}
             </tbody>
           </table>
         </div>
 
-        {/* Pagination Footer */}
-        <div className="bg-slate-950/80 px-4 py-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400 font-mono">
-          <div>
-            Showing {Math.min(filtered.length, (currentPage - 1) * itemsPerPage + 1)} to{' '}
-            {Math.min(filtered.length, currentPage * itemsPerPage)} of {filtered.length} application records
-          </div>
-          <div className="flex gap-1.5">
+        {/* Pagination */}
+        <div className="p-3 bg-slate-950/80 border-t border-slate-800 flex items-center justify-between text-xs font-mono text-slate-400">
+          <span>Page {currentPage} of {totalPages || 1}</span>
+          <div className="flex gap-1">
             <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="px-2.5 py-1 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 rounded text-slate-300"
             >
               Prev
             </button>
-            <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded text-slate-200">
-              Page {currentPage} of {totalPages || 1}
-            </span>
             <button
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages || totalPages === 0}
-              className="px-2.5 py-1 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 rounded text-slate-300"
             >
               Next
             </button>
@@ -252,58 +318,181 @@ export const ScholarshipApplicationsPage: React.FC<ScholarshipApplicationsPagePr
         </div>
       </div>
 
-      {/* 120-Byte COBOL Layout Modal */}
-      {selectedApp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-700 w-full max-w-2xl rounded-xl shadow-2xl p-6 space-y-4">
+      {/* Submit Application Modal */}
+      {isSubmitModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <FileCode className="w-5 h-5 text-ibm-blue" />
-                <h3 className="font-bold text-slate-100 text-sm font-mono">
-                  COBOL Record Layout (SCHAPP.cpy) - {selectedApp.app_id}
-                </h3>
-              </div>
-              <button
-                onClick={() => setSelectedApp(null)}
-                className="text-slate-400 hover:text-white"
-              >
-                <X className="w-5 h-5" />
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Plus className="w-4 h-4 text-ibm-blue" />
+                <span>Submit Scholarship Application</span>
+              </h3>
+              <button onClick={() => setIsSubmitModalOpen(false)} className="text-slate-400 hover:text-white">
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-3 font-mono text-xs">
+            {submitError && (
+              <div className="p-3 bg-red-950/80 border border-red-700 rounded text-xs text-red-200 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                <span>{submitError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmitApplication} className="space-y-3 text-xs">
               <div>
-                <label className="text-slate-400 block mb-1">
-                  120-Byte Fixed-Width Sequential Line:
-                </label>
-                <div className="bg-black p-3 rounded border border-slate-800 text-emerald-400 overflow-x-auto whitespace-pre font-mono text-xs">
-                  {format120ByteString(selectedApp)}
-                </div>
+                <label className="text-slate-300 font-mono block mb-1">Student ID (Registered)</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. STU2024001"
+                  value={submitForm.student_id}
+                  onChange={(e) => setSubmitForm({ ...submitForm, student_id: e.target.value.toUpperCase() })}
+                  className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 font-mono text-emerald-400 uppercase"
+                />
               </div>
 
-              <div className="bg-slate-950 p-3 rounded border border-slate-800 space-y-1.5 text-xs">
-                <div className="text-slate-400 font-semibold mb-2">Field Offsets (IBM z/OS DCB Format):</div>
-                <div className="grid grid-cols-2 gap-2 text-[11px]">
-                  <div><span className="text-slate-500">01-10:</span> APP-ID = <span className="text-slate-200">{selectedApp.app_id}</span></div>
-                  <div><span className="text-slate-500">11-20:</span> APP-STU-ID = <span className="text-slate-200">{selectedApp.stu_id}</span></div>
-                  <div><span className="text-slate-500">21-26:</span> APP-SCH-CODE = <span className="text-slate-200">{selectedApp.sch_code}</span></div>
-                  <div><span className="text-slate-500">27-34:</span> APP-DATE = <span className="text-slate-200">{selectedApp.app_date}</span></div>
-                  <div><span className="text-slate-500">35-38:</span> APP-CGPA = <span className="text-slate-200">{selectedApp.cgpa.toFixed(2)}</span></div>
-                  <div><span className="text-slate-500">39-43:</span> APP-ATTENDANCE = <span className="text-slate-200">{selectedApp.attendance.toFixed(2)}%</span></div>
-                  <div><span className="text-slate-500">44-53:</span> APP-FAMILY-INCOME = <span className="text-slate-200">₹{selectedApp.income.toLocaleString()}</span></div>
-                  <div><span className="text-slate-500">54-55:</span> APP-ARREARS = <span className="text-slate-200">{selectedApp.arrears}</span></div>
-                  <div><span className="text-slate-500">56-73:</span> APP-BANK-AC = <span className="text-slate-200">{selectedApp.bank_ac_num}</span></div>
-                  <div><span className="text-slate-500">74-84:</span> APP-BANK-IFSC = <span className="text-slate-200">{selectedApp.bank_ifsc || 'BLANK'}</span></div>
-                </div>
+              <div>
+                <label className="text-slate-300 font-mono block mb-1">Scholarship Scheme</label>
+                <select
+                  value={submitForm.scheme_code}
+                  onChange={(e) => setSubmitForm({ ...submitForm, scheme_code: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 font-mono"
+                >
+                  <option value="MERIT1">MERIT1 - State Post-Matric Merit Scholarship</option>
+                  <option value="TECH02">TECH02 - Technical Excellence Endowment</option>
+                </select>
               </div>
+
+              <div>
+                <label className="text-slate-300 font-mono block mb-1">Bank Account Number</label>
+                <input
+                  type="text"
+                  required
+                  value={submitForm.bank_account_no}
+                  onChange={(e) => setSubmitForm({ ...submitForm, bank_account_no: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 font-mono text-slate-100"
+                />
+              </div>
+
+              <div>
+                <label className="text-slate-300 font-mono block mb-1">Bank IFSC Code</label>
+                <input
+                  type="text"
+                  required
+                  maxLength={11}
+                  value={submitForm.bank_ifsc}
+                  onChange={(e) => setSubmitForm({ ...submitForm, bank_ifsc: e.target.value.toUpperCase() })}
+                  className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 font-mono text-slate-100 uppercase"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsSubmitModalOpen(false)}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-4 py-1.5 bg-ibm-blue hover:bg-ibm-darkblue disabled:bg-slate-800 text-white rounded font-semibold flex items-center gap-1.5"
+                >
+                  {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>{isSubmitting ? 'Submitting...' : 'Submit Application'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Upload Modal */}
+      {isUploadModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-lg w-full p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Upload className="w-4 h-4 text-emerald-400" />
+                <span>Bulk Upload Applications Feed CSV</span>
+              </h3>
+              <button onClick={() => setIsUploadModalOpen(false)} className="text-slate-400 hover:text-white">
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
-            <div className="flex justify-end pt-2">
+            {uploadMessage && (
+              <div className="p-3 bg-slate-950 border border-slate-700 rounded text-xs text-slate-200">
+                {uploadMessage}
+              </div>
+            )}
+
+            <form onSubmit={handleBulkUpload} className="space-y-3 text-xs">
+              <p className="text-slate-400 text-[11px]">
+                Paste CSV data below with columns: <code className="text-emerald-400">student_id,scheme_code,bank_account_no,bank_ifsc</code>
+              </p>
+
+              <textarea
+                rows={8}
+                required
+                placeholder="student_id,scheme_code,bank_account_no,bank_ifsc&#10;STU2024001,MERIT1,9182374619283746,SBIN0001234"
+                value={csvContent}
+                onChange={(e) => setCsvContent(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-700 rounded p-2.5 font-mono text-[11px] text-slate-100 focus:outline-none focus:border-ibm-blue"
+              ></textarea>
+
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsUploadModalOpen(false)}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded"
+                >
+                  Close
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUploading}
+                  className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 text-white rounded font-semibold flex items-center gap-1.5"
+                >
+                  {isUploading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>{isUploading ? 'Ingesting...' : 'Ingest Feed'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 120-Byte Fixed Width Layout Inspector */}
+      {selectedApp && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-2xl w-full p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-sm font-bold text-white">
+                COBOL 120-Byte Fixed-Width Record: {selectedApp.app_id}
+              </h3>
+              <button onClick={() => setSelectedApp(null)} className="text-slate-400 hover:text-white">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-[11px] text-slate-400 font-mono">
+                Exact dataset record formatted according to copybook SCHAPP.cpy (LRECL=120):
+              </div>
+              <pre className="bg-slate-950 p-3 rounded font-mono text-[11px] text-ibm-cyan overflow-x-auto border border-slate-800 select-all">
+                {format120ByteString(selectedApp)}
+              </pre>
+            </div>
+
+            <div className="flex justify-end">
               <button
                 onClick={() => setSelectedApp(null)}
-                className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-4 py-2 rounded transition-colors"
+                className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs"
               >
-                Close Inspector
+                Close
               </button>
             </div>
           </div>

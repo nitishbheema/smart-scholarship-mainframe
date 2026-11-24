@@ -1,17 +1,47 @@
 import React, { useState } from 'react';
-import { Search, Filter, Download, Database, Eye, X, Binary } from 'lucide-react';
+import { Search, Filter, Download, Plus, Upload, Eye, X, Binary, AlertCircle, Loader2, UserCheck, Trash2 } from 'lucide-react';
 import { Student } from '../types';
+import { api } from '../services/api';
 
 interface StudentRecordsPageProps {
   students: Student[];
+  onRefresh?: () => void;
+  isAdminOrOperator?: boolean;
 }
 
-export const StudentRecordsPage: React.FC<StudentRecordsPageProps> = ({ students }) => {
+export const StudentRecordsPage: React.FC<StudentRecordsPageProps> = ({
+  students,
+  onRefresh,
+  isAdminOrOperator = true,
+}) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDept, setSelectedDept] = useState('ALL');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
+
+  // Add Student Modal State
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [addForm, setAddForm] = useState({
+    student_id: '',
+    name: '',
+    email: '',
+    department: 'CSE',
+    course: 'B.Tech Computer Science',
+    academic_year: '3',
+    cgpa: '8.50',
+    attendance: '85.00',
+    annual_family_income: '200000',
+    active_arrears: '0',
+  });
+
+  // Bulk Upload Modal State
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [csvContent, setCsvContent] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState<string | null>(null);
 
   const filtered = students.filter(s => {
     const matchSearch = s.stu_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -24,10 +54,68 @@ export const StudentRecordsPage: React.FC<StudentRecordsPageProps> = ({ students
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
   const displayed = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
+  const handleAddSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsAdding(true);
+    setAddError(null);
+
+    try {
+      await api.createStudent(addForm);
+      setIsAddModalOpen(false);
+      setAddForm({
+        student_id: '',
+        name: '',
+        email: '',
+        department: 'CSE',
+        course: 'B.Tech Computer Science',
+        academic_year: '3',
+        cgpa: '8.50',
+        attendance: '85.00',
+        annual_family_income: '200000',
+        active_arrears: '0',
+      });
+      if (onRefresh) await onRefresh();
+    } catch (err: any) {
+      setAddError(err.message || 'Failed to create student record');
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
+  const handleBulkUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!csvContent.trim()) return;
+
+    setIsUploading(true);
+    setUploadMessage(null);
+
+    try {
+      const res = await api.bulkUploadStudents(csvContent);
+      setUploadMessage(`Upload successful: ${res.inserted} inserted, ${res.updated} updated.`);
+      setCsvContent('');
+      if (onRefresh) await onRefresh();
+      setTimeout(() => setIsUploadModalOpen(false), 1500);
+    } catch (err: any) {
+      setUploadMessage(`Upload failed: ${err.message}`);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDeactivate = async (studentId: string) => {
+    if (!confirm(`Are you sure you want to deactivate student ${studentId}?`)) return;
+    try {
+      await api.deleteStudent(studentId);
+      if (onRefresh) await onRefresh();
+    } catch (err: any) {
+      alert(`Deactivation failed: ${err.message}`);
+    }
+  };
+
   const exportCsv = () => {
-    const headers = "Student ID,Full Name,DOB,Gender,Department,Year,Semester,Email,Phone,Enroll Date,Status\n";
+    const headers = "Student ID,Full Name,Department,Course,Year,CGPA,Attendance %,Family Income,Arrears,Status\n";
     const rows = filtered.map(s => 
-      `"${s.stu_id}","${s.name}","${s.dob}","${s.gender}","${s.dept.trim()}","${s.year}","${s.sem}","${s.email}","${s.phone}","${s.enroll_date}","${s.status}"`
+      `"${s.stu_id}","${s.name}","${s.dept.trim()}","${s.course || 'B.Tech'}","${s.year}","${s.cgpa ?? ''}","${s.attendance ?? ''}","${s.income ?? ''}","${s.arrears ?? ''}","${s.status}"`
     ).join("\n");
     const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -44,14 +132,14 @@ export const StudentRecordsPage: React.FC<StudentRecordsPageProps> = ({ students
     const recStr = (
       s.stu_id.padEnd(10) +
       s.name.padEnd(30) +
-      s.dob.replace(/-/g, '').padEnd(8) +
-      s.gender +
+      (s.dob || '20040515').replace(/-/g, '').padEnd(8) +
+      (s.gender || 'U') +
       s.dept.padEnd(4) +
       s.year +
-      s.sem.padStart(2, '0') +
+      String(s.sem || 6).padStart(2, '0') +
       s.email.padEnd(35) +
-      s.phone.padEnd(10) +
-      s.enroll_date.replace(/-/g, '').padEnd(8) +
+      (s.phone || '9876543210').padEnd(10) +
+      (s.enroll_date || '20220801').replace(/-/g, '').padEnd(8) +
       s.status +
       ''.padEnd(40)
     ).slice(0, 150);
@@ -87,44 +175,79 @@ export const StudentRecordsPage: React.FC<StudentRecordsPageProps> = ({ students
           </p>
         </div>
 
-        <button
-          onClick={exportCsv}
-          className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3.5 py-2 rounded-lg border border-slate-700 transition-colors shadow-sm"
-        >
-          <Download className="w-4 h-4 text-ibm-cyan" />
-          <span>Export Master CSV</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          {isAdminOrOperator && (
+            <>
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="flex items-center gap-1.5 bg-ibm-blue hover:bg-ibm-darkblue text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-sm transition-all"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add Student</span>
+              </button>
+
+              <button
+                onClick={() => setIsUploadModalOpen(true)}
+                className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 transition-colors shadow-sm"
+              >
+                <Upload className="w-4 h-4 text-emerald-400" />
+                <span>Bulk Upload</span>
+              </button>
+            </>
+          )}
+
+          <button
+            onClick={exportCsv}
+            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3.5 py-2 rounded-lg border border-slate-700 transition-colors shadow-sm"
+          >
+            <Download className="w-4 h-4 text-ibm-cyan" />
+            <span>Export CSV</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter and Search Bar */}
       <div className="bg-slate-900 border border-slate-800 rounded-lg p-3.5 flex flex-col md:flex-row gap-3 items-center justify-between shadow-sm">
         <div className="relative w-full md:w-80">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-500" />
           <input
             type="text"
-            placeholder="Search by Student ID, name, email..."
+            placeholder="Search by ID, name or email..."
             value={searchTerm}
-            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-            className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-ibm-blue font-mono"
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-ibm-blue font-mono"
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <Filter className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-xs text-slate-400">Dept:</span>
-          {['ALL', 'CS', 'IT', 'ECE', 'EEE', 'MECH', 'CIVL'].map(dept => (
-            <button
-              key={dept}
-              onClick={() => { setSelectedDept(dept); setCurrentPage(1); }}
-              className={`px-2.5 py-1 rounded text-xs font-mono font-medium transition-colors ${
-                selectedDept === dept
-                  ? 'bg-ibm-blue text-white font-semibold'
-                  : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
-              }`}
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="flex items-center gap-2">
+            <Filter className="w-3.5 h-3.5 text-slate-400" />
+            <span className="text-xs text-slate-400 font-mono">Department:</span>
+            <select
+              value={selectedDept}
+              onChange={(e) => {
+                setSelectedDept(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-ibm-blue font-mono"
             >
-              {dept}
-            </button>
-          ))}
+              <option value="ALL">ALL DEPARTMENTS</option>
+              <option value="CSE">CSE</option>
+              <option value="ECE">ECE</option>
+              <option value="MECH">MECH</option>
+              <option value="IT">IT</option>
+              <option value="CIVIL">CIVIL</option>
+              <option value="EEE">EEE</option>
+              <option value="CHEM">CHEM</option>
+            </select>
+          </div>
+
+          <span className="text-xs text-slate-500 font-mono">
+            Showing {filtered.length} records
+          </span>
         </div>
       </div>
 
@@ -135,88 +258,96 @@ export const StudentRecordsPage: React.FC<StudentRecordsPageProps> = ({ students
             <thead className="bg-slate-950/80 border-b border-slate-800 text-slate-400 font-semibold uppercase text-[11px]">
               <tr>
                 <th className="py-3 px-4">Student ID (Key)</th>
-                <th className="py-3 px-4">Full Student Name</th>
+                <th className="py-3 px-4">Full Name</th>
                 <th className="py-3 px-4">Dept</th>
-                <th className="py-3 px-4">Year/Sem</th>
+                <th className="py-3 px-4">Year</th>
                 <th className="py-3 px-4">Email</th>
-                <th className="py-3 px-4">Phone</th>
+                <th className="py-3 px-4">CGPA</th>
+                <th className="py-3 px-4">Attendance</th>
+                <th className="py-3 px-4">Income</th>
                 <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4 text-right">VSAM Hex</th>
+                <th className="py-3 px-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
-              {displayed.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-8 text-center text-slate-500 italic">
-                    No indexed student master records matched your query.
+              {displayed.map((s) => (
+                <tr key={s.stu_id} className="greenbar-row hover:bg-slate-800/50 transition-colors">
+                  <td className="py-3 px-4 font-bold text-ibm-cyan">
+                    {s.stu_id}
                   </td>
-                </tr>
-              ) : (
-                displayed.map((s) => (
-                  <tr key={s.stu_id} className="greenbar-row hover:bg-slate-800/50 transition-colors">
-                    <td className="py-3 px-4 text-ibm-cyan font-bold">
-                      {s.stu_id}
-                    </td>
-                    <td className="py-3 px-4 text-slate-200 font-medium">
-                      {s.name}
-                    </td>
-                    <td className="py-3 px-4 text-slate-300">
-                      <span className="bg-slate-800 px-2 py-0.5 rounded text-[11px] border border-slate-700">
-                        {s.dept.trim()}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-slate-300">
-                      Yr {s.year} / Sem {s.sem}
-                    </td>
-                    <td className="py-3 px-4 text-slate-400">
-                      {s.email}
-                    </td>
-                    <td className="py-3 px-4 text-slate-400">
-                      {s.phone}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-950 text-emerald-400 border border-emerald-800">
-                        ACTIVE (A)
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right">
+                  <td className="py-3 px-4 text-slate-200 font-sans font-medium">
+                    {s.name}
+                  </td>
+                  <td className="py-3 px-4 text-slate-400">
+                    <span className="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px] font-semibold">
+                      {s.dept.trim()}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-slate-400">
+                    Yr {s.year}
+                  </td>
+                  <td className="py-3 px-4 text-slate-400">
+                    {s.email}
+                  </td>
+                  <td className="py-3 px-4 font-semibold text-emerald-400">
+                    {s.cgpa !== undefined ? s.cgpa.toFixed(2) : 'N/A'}
+                  </td>
+                  <td className="py-3 px-4 text-slate-300">
+                    {s.attendance !== undefined ? `${s.attendance.toFixed(1)}%` : 'N/A'}
+                  </td>
+                  <td className="py-3 px-4 text-slate-400">
+                    {s.income !== undefined ? `₹${s.income.toLocaleString()}` : 'N/A'}
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                      s.status === 'ACTIVE' || s.status === 'A'
+                        ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                        : 'bg-red-950 text-red-400 border border-red-800'
+                    }`}>
+                      {s.status}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <div className="flex items-center justify-center gap-1.5">
                       <button
                         onClick={() => setSelectedStudent(s)}
-                        className="text-ibm-blue hover:text-blue-400 p-1 rounded hover:bg-blue-950/40 inline-flex items-center gap-1 transition-colors text-[11px]"
-                        title="Inspect 150-Byte VSAM KSDS Record & Hex Dump"
+                        className="bg-slate-800 hover:bg-slate-700 text-ibm-cyan px-2 py-1 rounded text-[10px] transition-colors"
+                        title="View Record Hex Dump"
                       >
-                        <Binary className="w-3.5 h-3.5" />
-                        <span>Dump</span>
+                        <Eye className="w-3.5 h-3.5" />
                       </button>
-                    </td>
-                  </tr>
-                ))
-              )}
+                      {isAdminOrOperator && (s.status === 'ACTIVE' || s.status === 'A') && (
+                        <button
+                          onClick={() => handleDeactivate(s.stu_id)}
+                          className="bg-slate-800 hover:bg-red-950 text-red-400 px-2 py-1 rounded text-[10px] transition-colors"
+                          title="Deactivate Student Record"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
 
-        {/* Pagination Footer */}
-        <div className="bg-slate-950/80 px-4 py-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400 font-mono">
-          <div>
-            Showing {Math.min(filtered.length, (currentPage - 1) * itemsPerPage + 1)} to{' '}
-            {Math.min(filtered.length, currentPage * itemsPerPage)} of {filtered.length} indexed records
-          </div>
-          <div className="flex gap-1.5">
+        {/* Pagination */}
+        <div className="p-3 bg-slate-950/80 border-t border-slate-800 flex items-center justify-between text-xs font-mono text-slate-400">
+          <span>Page {currentPage} of {totalPages || 1}</span>
+          <div className="flex gap-1">
             <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="px-2.5 py-1 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 rounded text-slate-300"
             >
               Prev
             </button>
-            <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded text-slate-200">
-              Page {currentPage} of {totalPages || 1}
-            </span>
             <button
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages || totalPages === 0}
-              className="px-2.5 py-1 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 rounded text-slate-300"
             >
               Next
             </button>
@@ -224,47 +355,239 @@ export const StudentRecordsPage: React.FC<StudentRecordsPageProps> = ({ students
         </div>
       </div>
 
-      {/* Hex Dump Modal */}
-      {selectedStudent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-700 w-full max-w-3xl rounded-xl shadow-2xl p-6 space-y-4">
+      {/* Add Student Modal */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-lg w-full p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <Database className="w-5 h-5 text-ibm-blue" />
-                <h3 className="font-bold text-slate-100 text-sm font-mono">
-                  VSAM KSDS Record Layout & Hex Dump: {selectedStudent.stu_id}
-                </h3>
-              </div>
-              <button
-                onClick={() => setSelectedStudent(null)}
-                className="text-slate-400 hover:text-white"
-              >
-                <X className="w-5 h-5" />
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Plus className="w-4 h-4 text-ibm-blue" />
+                <span>Add Student to VSAM Master (PostgreSQL)</span>
+              </h3>
+              <button onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-white">
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs font-mono bg-slate-950 p-3 rounded border border-slate-800">
-              <div><span className="text-slate-500">Record Length:</span> <span className="text-slate-200">150 Bytes</span></div>
-              <div><span className="text-slate-500">Key Offset:</span> <span className="text-slate-200">0 (Pos 1)</span></div>
-              <div><span className="text-slate-500">Key Length:</span> <span className="text-slate-200">10 Bytes</span></div>
-              <div><span className="text-slate-500">Cluster Status:</span> <span className="text-emerald-400">OPEN (00)</span></div>
+            {addError && (
+              <div className="p-3 bg-red-950/80 border border-red-700 rounded text-xs text-red-200 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                <span>{addError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleAddSubmit} className="space-y-3 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-300 font-mono block mb-1">Student ID (STU+7 digits)</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="STU2024101"
+                    value={addForm.student_id}
+                    onChange={(e) => setAddForm({ ...addForm, student_id: e.target.value.toUpperCase() })}
+                    className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 font-mono text-emerald-400 uppercase"
+                  />
+                </div>
+                <div>
+                  <label className="text-slate-300 font-mono block mb-1">Full Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Student Name"
+                    value={addForm.name}
+                    onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-300 font-mono block mb-1">Email</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="student@scholarship.edu"
+                    value={addForm.email}
+                    onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100"
+                  />
+                </div>
+                <div>
+                  <label className="text-slate-300 font-mono block mb-1">Department</label>
+                  <select
+                    value={addForm.department}
+                    onChange={(e) => setAddForm({ ...addForm, department: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 font-mono"
+                  >
+                    <option value="CSE">CSE</option>
+                    <option value="ECE">ECE</option>
+                    <option value="MECH">MECH</option>
+                    <option value="IT">IT</option>
+                    <option value="CIVIL">CIVIL</option>
+                    <option value="EEE">EEE</option>
+                    <option value="CHEM">CHEM</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-slate-300 font-mono block mb-1">CGPA (0-10)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="10"
+                    required
+                    value={addForm.cgpa}
+                    onChange={(e) => setAddForm({ ...addForm, cgpa: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 font-mono text-emerald-400"
+                  />
+                </div>
+                <div>
+                  <label className="text-slate-300 font-mono block mb-1">Attendance %</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    required
+                    value={addForm.attendance}
+                    onChange={(e) => setAddForm({ ...addForm, attendance: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 font-mono text-emerald-400"
+                  />
+                </div>
+                <div>
+                  <label className="text-slate-300 font-mono block mb-1">Arrears</label>
+                  <input
+                    type="number"
+                    min="0"
+                    required
+                    value={addForm.active_arrears}
+                    onChange={(e) => setAddForm({ ...addForm, active_arrears: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 font-mono text-slate-100"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-slate-300 font-mono block mb-1">Annual Family Income (INR)</label>
+                <input
+                  type="number"
+                  min="0"
+                  required
+                  value={addForm.annual_family_income}
+                  onChange={(e) => setAddForm({ ...addForm, annual_family_income: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 font-mono text-slate-100"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isAdding}
+                  className="px-4 py-1.5 bg-ibm-blue hover:bg-ibm-darkblue disabled:bg-slate-800 text-white rounded font-semibold flex items-center gap-1.5"
+                >
+                  {isAdding && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>{isAdding ? 'Saving...' : 'Add Student'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Upload Modal */}
+      {isUploadModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-lg w-full p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Upload className="w-4 h-4 text-emerald-400" />
+                <span>Bulk Upload Student Master CSV</span>
+              </h3>
+              <button onClick={() => setIsUploadModalOpen(false)} className="text-slate-400 hover:text-white">
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
-            <div>
-              <label className="text-xs font-semibold text-slate-300 font-mono block mb-1.5">
-                IBM z/OS IDCAMS Hexadecimal & Character Inspection:
-              </label>
-              <pre className="bg-black text-emerald-400 p-4 rounded-lg border border-slate-800 font-mono text-xs overflow-x-auto leading-relaxed shadow-inner">
-                {generateHexDump(selectedStudent)}
-              </pre>
+            {uploadMessage && (
+              <div className="p-3 bg-slate-950 border border-slate-700 rounded text-xs text-slate-200">
+                {uploadMessage}
+              </div>
+            )}
+
+            <form onSubmit={handleBulkUpload} className="space-y-3 text-xs">
+              <p className="text-slate-400 text-[11px]">
+                Paste CSV data below with columns: <code className="text-emerald-400">student_id,name,email,department,course,academic_year,cgpa,attendance,annual_family_income,active_arrears</code>
+              </p>
+
+              <textarea
+                rows={8}
+                required
+                placeholder="student_id,name,email,department,course,academic_year,cgpa,attendance,annual_family_income,active_arrears&#10;STU2024101,John Doe,john@edu.com,CSE,B.Tech,2,8.80,89.0,180000,0"
+                value={csvContent}
+                onChange={(e) => setCsvContent(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-700 rounded p-2.5 font-mono text-[11px] text-slate-100 focus:outline-none focus:border-ibm-blue"
+              ></textarea>
+
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsUploadModalOpen(false)}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded"
+                >
+                  Close
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUploading}
+                  className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 text-white rounded font-semibold flex items-center gap-1.5"
+                >
+                  {isUploading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>{isUploading ? 'Uploading...' : 'Process Upload'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Hex Dump Inspector Modal */}
+      {selectedStudent && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-2xl w-full p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Binary className="w-4 h-4 text-ibm-cyan" />
+                <h3 className="text-sm font-bold text-white">
+                  VSAM Record Hex Dump: {selectedStudent.stu_id}
+                </h3>
+              </div>
+              <button onClick={() => setSelectedStudent(null)} className="text-slate-400 hover:text-white">
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
-            <div className="flex justify-end pt-2">
+            <pre className="bg-slate-950 p-3 rounded font-mono text-[11px] text-emerald-400 overflow-x-auto border border-slate-800">
+              {generateHexDump(selectedStudent)}
+            </pre>
+
+            <div className="flex justify-end">
               <button
                 onClick={() => setSelectedStudent(null)}
-                className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-4 py-2 rounded transition-colors"
+                className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs"
               >
-                Close Dump Inspector
+                Close
               </button>
             </div>
           </div>

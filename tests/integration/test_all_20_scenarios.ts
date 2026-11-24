@@ -30,6 +30,9 @@ async function runTestSuite() {
     const dbVer = await pool.query('SELECT version()');
     assert(dbVer.rows.length > 0, 'Scenario 19 - Database Persistence', `Connected to PostgreSQL: ${dbVer.rows[0].version.slice(0, 30)}...`);
 
+    // Reset previous test batch jobs in case previous run was interrupted
+    await pool.query("UPDATE batch_jobs SET status = 'COMPLETED' WHERE status = 'RUNNING';");
+
     // Reset test batch data
     const batchId = `TEST${Date.now().toString().slice(-6)}`;
     console.log(`\nInitiating test batch execution: ${batchId}...`);
@@ -38,6 +41,8 @@ async function runTestSuite() {
     await client.query('BEGIN');
 
     // Clean existing test applications
+    await client.query("DELETE FROM disbursement_records WHERE application_id LIKE 'APP20249%'");
+    await client.query("DELETE FROM eligibility_results WHERE application_id LIKE 'APP20249%'");
     await client.query("DELETE FROM scholarship_applications WHERE application_id LIKE 'APP20249%'");
     await client.query("DELETE FROM students WHERE student_id LIKE 'STU20249%'");
 

@@ -1,6 +1,16 @@
-// API Client for Smart Scholarship Backend & COBOL Batch Engine
+// Production API Client for Smart Scholarship Backend & COBOL Batch Engine
 
-const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:5000';
+const isProd = Boolean((import.meta as any).env?.PROD);
+const envBaseUrl = (import.meta as any).env?.VITE_API_BASE_URL;
+
+if (isProd && !envBaseUrl) {
+  console.error(
+    '[CONFIG WARNING] VITE_API_BASE_URL environment variable is not defined for production. ' +
+    'Localhost fallback is disabled in production to prevent silent connection failures.'
+  );
+}
+
+export const API_BASE_URL: string = envBaseUrl || (isProd ? '' : 'http://localhost:5000');
 
 class ApiService {
   private token: string | null = null;
@@ -22,7 +32,18 @@ class ApiService {
     return this.token;
   }
 
+  public getBaseUrl(): string {
+    return API_BASE_URL;
+  }
+
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    if (isProd && !envBaseUrl && !API_BASE_URL) {
+      throw new Error(
+        'VITE_API_BASE_URL is not configured for this production environment. ' +
+        'Please configure VITE_API_BASE_URL in your hosting settings.'
+      );
+    }
+
     const headers: Record<string, string> = {
       ...(options.headers as Record<string, string> || {}),
     };
@@ -36,20 +57,17 @@ class ApiService {
     }
 
     const url = `${API_BASE_URL}${endpoint}`;
-    try {
-      const response = await fetch(url, { ...options, headers });
-      if (!response.ok) {
-        const errorBody = await response.json().catch(() => ({ error: response.statusText }));
-        throw new Error(errorBody.error || `HTTP ${response.status}: ${response.statusText}`);
-      }
-      return await response.json();
-    } catch (err: any) {
-      console.warn(`API Request to ${endpoint} failed:`, err.message);
-      throw err;
+    const response = await fetch(url, { ...options, headers });
+    
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => ({ error: response.statusText }));
+      throw new Error(errorBody.error || `HTTP ${response.status}: ${response.statusText}`);
     }
+
+    return await response.json();
   }
 
-  // --- AUTH ---
+  // --- AUTHENTICATION ---
   async login(username: string, password: string) {
     const data = await this.request<any>('/api/auth/login', {
       method: 'POST',
@@ -65,7 +83,7 @@ class ApiService {
     return this.request<any>('/api/auth/me');
   }
 
-  // --- HEALTH ---
+  // --- HEALTH & STATUS ---
   async getHealth() {
     return this.request<any>('/api/health');
   }
@@ -88,6 +106,10 @@ class ApiService {
   async getStudents(params?: Record<string, string>) {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
     return this.request<any>(`/api/students${qs}`);
+  }
+
+  async getStudentById(id: string) {
+    return this.request<any>(`/api/students/${id}`);
   }
 
   async createStudent(student: any) {
@@ -117,9 +139,20 @@ class ApiService {
     });
   }
 
-  // --- SCHEMES ---
+  // --- SCHOLARSHIP SCHEMES ---
   async getSchemes() {
     return this.request<any>('/api/schemes');
+  }
+
+  async getSchemeByCode(code: string) {
+    return this.request<any>(`/api/schemes/${code}`);
+  }
+
+  async createScheme(scheme: any) {
+    return this.request<any>('/api/schemes', {
+      method: 'POST',
+      body: JSON.stringify(scheme),
+    });
   }
 
   async updateScheme(code: string, scheme: any) {
@@ -129,10 +162,14 @@ class ApiService {
     });
   }
 
-  // --- APPLICATIONS ---
+  // --- SCHOLARSHIP APPLICATIONS ---
   async getApplications(params?: Record<string, string>) {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
     return this.request<any>(`/api/applications${qs}`);
+  }
+
+  async getApplicationById(id: string) {
+    return this.request<any>(`/api/applications/${id}`);
   }
 
   async createApplication(application: any) {

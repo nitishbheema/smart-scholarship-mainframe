@@ -1,7 +1,8 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { pool } from '../database/db';
+import { AuthenticatedRequest } from '../middleware/auth';
 
-export async function getSchemes(req: Request, res: Response) {
+export async function getSchemes(req: AuthenticatedRequest, res: Response) {
   try {
     const result = await pool.query('SELECT * FROM scholarship_schemes ORDER BY scheme_code ASC');
     return res.json({ schemes: result.rows });
@@ -10,12 +11,12 @@ export async function getSchemes(req: Request, res: Response) {
   }
 }
 
-export async function getSchemeByCode(req: Request, res: Response) {
+export async function getSchemeByCode(req: AuthenticatedRequest, res: Response) {
   const { code } = req.params;
   try {
-    const result = await pool.query('SELECT * FROM scholarship_schemes WHERE scheme_code = $1', [code]);
+    const result = await pool.query('SELECT * FROM scholarship_schemes WHERE scheme_code = $1', [code.toUpperCase()]);
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Scholarship scheme not found' });
+      return res.status(404).json({ error: `Scholarship scheme '${code}' not found` });
     }
     return res.json({ scheme: result.rows[0] });
   } catch (err: any) {
@@ -23,7 +24,7 @@ export async function getSchemeByCode(req: Request, res: Response) {
   }
 }
 
-export async function createScheme(req: Request, res: Response) {
+export async function createScheme(req: AuthenticatedRequest, res: Response) {
   const {
     scheme_code,
     scheme_name,
@@ -49,10 +50,12 @@ export async function createScheme(req: Request, res: Response) {
     return res.status(400).json({ error: 'scheme_code and scheme_name are required' });
   }
 
+  const cleanCode = String(scheme_code).trim().toUpperCase();
+
   try {
-    const check = await pool.query('SELECT scheme_code FROM scholarship_schemes WHERE scheme_code = $1', [scheme_code]);
+    const check = await pool.query('SELECT scheme_code FROM scholarship_schemes WHERE scheme_code = $1', [cleanCode]);
     if (check.rows.length > 0) {
-      return res.status(409).json({ error: `Scheme with code ${scheme_code} already exists` });
+      return res.status(409).json({ error: `Scheme with code '${cleanCode}' already exists` });
     }
 
     const insertSql = `
@@ -68,8 +71,8 @@ export async function createScheme(req: Request, res: Response) {
     `;
 
     const result = await pool.query(insertSql, [
-      scheme_code,
-      scheme_name,
+      cleanCode,
+      String(scheme_name).trim(),
       description || '',
       parseFloat(min_cgpa) || 7.50,
       parseFloat(min_attendance) || 75.00,
@@ -88,20 +91,24 @@ export async function createScheme(req: Request, res: Response) {
       is_active !== undefined ? is_active : true,
     ]);
 
+    const actor = req.user?.username || 'ADMIN';
     await pool.query(
       `INSERT INTO audit_logs (action, performed_by, details)
-       VALUES ('SCHEME_CREATE', 'ADMIN', $1)`,
-      [JSON.stringify({ scheme_code, scheme_name })]
+       VALUES ('SCHEME_CREATE', $1, $2)`,
+      [actor, JSON.stringify({ scheme_code: cleanCode, scheme_name })]
     );
 
-    return res.status(201).json({ message: 'Scheme created successfully', scheme: result.rows[0] });
+    return res.status(201).json({ message: 'Scholarship scheme created successfully', scheme: result.rows[0] });
   } catch (err: any) {
-    console.error('createScheme error:', err);
+    if (err.code === '23505') {
+      return res.status(409).json({ error: `Scheme code '${cleanCode}' already exists` });
+    }
+    console.error('createScheme error:', err.message || err);
     return res.status(500).json({ error: 'Failed to create scholarship scheme' });
   }
 }
 
-export async function updateScheme(req: Request, res: Response) {
+export async function updateScheme(req: AuthenticatedRequest, res: Response) {
   const { code } = req.params;
   const {
     scheme_name,
@@ -124,9 +131,9 @@ export async function updateScheme(req: Request, res: Response) {
   } = req.body;
 
   try {
-    const check = await pool.query('SELECT scheme_code FROM scholarship_schemes WHERE scheme_code = $1', [code]);
+    const check = await pool.query('SELECT * FROM scholarship_schemes WHERE scheme_code = $1', [code.toUpperCase()]);
     if (check.rows.length === 0) {
-      return res.status(404).json({ error: 'Scholarship scheme not found' });
+      return res.status(404).json({ error: `Scheme with code '${code}' not found` });
     }
 
     const updateSql = `
@@ -154,8 +161,8 @@ export async function updateScheme(req: Request, res: Response) {
     `;
 
     const result = await pool.query(updateSql, [
-      scheme_name,
-      description,
+      scheme_name ? String(scheme_name).trim() : null,
+      description !== undefined ? description : null,
       min_cgpa !== undefined ? parseFloat(min_cgpa) : null,
       min_attendance !== undefined ? parseFloat(min_attendance) : null,
       max_family_income !== undefined ? parseFloat(max_family_income) : null,
@@ -169,20 +176,21 @@ export async function updateScheme(req: Request, res: Response) {
       slab_3_min_cgpa !== undefined ? parseFloat(slab_3_min_cgpa) : null,
       slab_3_max_cgpa !== undefined ? parseFloat(slab_3_max_cgpa) : null,
       slab_3_amount !== undefined ? parseFloat(slab_3_amount) : null,
-      deadline,
-      is_active,
-      code,
+      deadline || null,
+      is_active !== undefined ? is_active : null,
+      code.toUpperCase(),
     ]);
 
+    const actor = req.user?.username || 'ADMIN';
     await pool.query(
       `INSERT INTO audit_logs (action, performed_by, details)
-       VALUES ('SCHEME_UPDATE', 'ADMIN', $1)`,
-      [JSON.stringify({ scheme_code: code, updatedValues: req.body })]
+       VALUES ('SCHEME_UPDATE', $1, $2)`,
+      [actor, JSON.stringify({ scheme_code: code.toUpperCase(), updatedFields: req.body })]
     );
 
     return res.json({ message: 'Scheme updated successfully', scheme: result.rows[0] });
   } catch (err: any) {
-    console.error('updateScheme error:', err);
-    return res.status(500).json({ error: 'Failed to update scheme' });
+    console.error('updateScheme error:', err.message || err);
+    return res.status(500).json({ error: 'Failed to update scholarship scheme' });
   }
 }

@@ -19,15 +19,20 @@ export interface UserSession {
 export interface Student {
   stu_id: string;
   name: string;
-  dob: string;
-  gender: 'M' | 'F' | 'O';
+  dob?: string;
+  gender?: string;
   dept: string;
-  year: string;
-  sem: string;
+  course?: string;
+  year: number | string;
+  sem?: number | string;
   email: string;
-  phone: string;
-  enroll_date: string;
-  status: 'A' | 'S' | 'G';
+  phone?: string;
+  enroll_date?: string;
+  status: string;
+  cgpa?: number;
+  attendance?: number;
+  income?: number;
+  arrears?: number;
 }
 
 export interface Application {
@@ -42,6 +47,7 @@ export interface Application {
   bank_ac_num: string;
   bank_ifsc: string;
   status?: string;
+  award_amount?: number;
   is_duplicate?: boolean;
 }
 
@@ -65,14 +71,16 @@ export interface EligibilityResult {
 }
 
 export interface DisbursementRecord {
-  rec_type: string;
+  rec_type?: string;
   ref_id: string;
+  disb_id?: string;
   app_id: string;
   stu_id: string;
+  stu_name?: string;
   amount: number;
   bank_ac_num: string;
   bank_ifsc: string;
-  status: 'P' | 'S' | 'F' | 'H'; // Pending, Success, Failed, Hold
+  status: 'P' | 'S' | 'F' | 'H' | string;
   value_date: string;
   utr_num: string;
   batch_id: string;
@@ -89,16 +97,22 @@ export interface ExceptionRecord {
 
 export interface BatchSummary {
   batch_id: string;
-  run_date: string;
+  job_name?: string;
+  step_name?: string;
+  exec_date?: string;
+  exec_time?: string;
+  run_date?: string;
   return_code: string;
-  total_students: number;
-  total_applications: number;
+  total_students?: number;
+  total_records?: number;
+  total_applications?: number;
   eligible_count: number;
   rejected_count: number;
   duplicate_count: number;
+  invalid_count?: number;
   total_disbursement_inr: number;
-  avg_cgpa_eligible: number;
-  avg_attendance_eligible: number;
+  avg_cgpa_eligible?: number;
+  avg_attendance_eligible?: number;
 }
 
 export interface SlabsConfig {

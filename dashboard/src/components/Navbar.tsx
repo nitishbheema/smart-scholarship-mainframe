@@ -1,5 +1,5 @@
 import React from 'react';
-import { Terminal, Upload, Play, Cpu, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Terminal, Upload, Play, Cpu, RefreshCw, Wifi, WifiOff } from 'lucide-react';
 import { UserSession } from '../types';
 
 interface NavbarProps {
@@ -10,6 +10,8 @@ interface NavbarProps {
   isBackendLive?: boolean;
   onExecuteLiveCobol?: () => void;
   isExecutingCobol?: boolean;
+  onRetryConnection?: () => void;
+  isConnecting?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -20,6 +22,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   isBackendLive = false,
   onExecuteLiveCobol,
   isExecutingCobol = false,
+  onRetryConnection,
+  isConnecting = false,
 }) => {
   return (
     <header className="bg-slate-900 border-b border-slate-800 text-white sticky top-0 z-40 px-4 py-2.5 flex items-center justify-between shadow-md">
@@ -39,13 +43,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             {isBackendLive ? (
               <span className="bg-emerald-950 text-emerald-400 border border-emerald-700/60 text-[10px] font-mono px-2 py-0.5 rounded-full flex items-center gap-1.5 font-bold shadow-sm">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                POSTGRESQL & COBOL ENGINE LIVE
+                <Wifi className="w-3 h-3 text-emerald-400" />
+                POSTGRESQL & COBOL ENGINE ONLINE
               </span>
             ) : (
-              <span className="bg-amber-950/80 text-amber-300 border border-amber-700/50 text-[10px] font-mono px-2 py-0.5 rounded-full flex items-center gap-1 font-semibold">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-                STANDALONE PREVIEW MODE
-              </span>
+              <button
+                onClick={onRetryConnection}
+                disabled={isConnecting}
+                className="bg-red-950/80 text-red-300 border border-red-700/60 hover:bg-red-900/90 text-[10px] font-mono px-2 py-0.5 rounded-full flex items-center gap-1.5 font-semibold transition-all"
+                title="Backend server unreachable. Click to retry connection."
+              >
+                <WifiOff className="w-3 h-3 text-red-400" />
+                <span>{isConnecting ? 'CONNECTING...' : 'BACKEND OFFLINE (RETRY)'}</span>
+              </button>
             )}
           </div>
           <p className="text-xs text-slate-400 font-mono flex items-center gap-2">
@@ -53,7 +63,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="text-slate-600">•</span>
             <span>Enterprise COBOL / GnuCOBOL</span>
             <span className="text-slate-600">•</span>
-            <span>PostgreSQL & Db2 DDL</span>
+            <span>PostgreSQL Relational DB</span>
             <span className="text-slate-600">•</span>
             <span className="text-emerald-400">RC 0000 / 0004</span>
           </p>
@@ -63,10 +73,10 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Action Controls */}
       <div className="flex items-center gap-3">
         {/* Execute Real COBOL Engine */}
-        {onExecuteLiveCobol && (
+        {session.isAuthenticated && onExecuteLiveCobol && (
           <button
             onClick={onExecuteLiveCobol}
-            disabled={isExecutingCobol}
+            disabled={isExecutingCobol || !isBackendLive}
             className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white text-xs font-bold px-3.5 py-1.5 rounded-lg shadow-md transition-all active:scale-95 border border-emerald-400/30 disabled:opacity-50"
             title="Execute compiled COBOL MAIN0001 executable directly via backend REST API"
           >
@@ -80,44 +90,51 @@ export const Navbar: React.FC<NavbarProps> = ({
         )}
 
         {/* JES2 JCL Spool Modal */}
-        <button
-          onClick={onOpenBatchModal}
-          className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded border border-slate-700 transition-colors"
-          title="Open JES2 JCL Batch Job Console"
-        >
-          <Play className="w-3.5 h-3.5 text-blue-400" />
-          <span>JES2 JCL Console</span>
-        </button>
+        {session.isAuthenticated && (
+          <button
+            onClick={onOpenBatchModal}
+            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded border border-slate-700 transition-colors"
+            title="Open JES2 JCL Batch Job Console"
+          >
+            <Play className="w-3.5 h-3.5 text-blue-400" />
+            <span>JES2 JCL Console</span>
+          </button>
+        )}
 
         {/* Import COBOL Report */}
-        <button
-          onClick={onOpenImportModal}
-          className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium px-3 py-1.5 rounded border border-slate-700 transition-colors"
-          title="Upload & Parse Mainframe SYSOUT / Reports"
-        >
-          <Upload className="w-3.5 h-3.5 text-ibm-cyan" />
-          <span>Import SYSOUT</span>
-        </button>
+        {session.isAuthenticated && (
+          <button
+            onClick={onOpenImportModal}
+            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium px-3 py-1.5 rounded border border-slate-700 transition-colors"
+            title="Upload & Parse Mainframe SYSOUT / Reports"
+          >
+            <Upload className="w-3.5 h-3.5 text-ibm-cyan" />
+            <span>Import SYSOUT</span>
+          </button>
+        )}
 
         {/* User Session & Role Indicator */}
-        <div className="h-6 w-px bg-slate-800"></div>
-
-        <div className="flex items-center gap-2.5">
-          <div className="flex flex-col text-right">
-            <span className="text-xs font-semibold text-slate-200">
-              {session.username}
-            </span>
-            <span className="text-[10px] font-mono text-slate-400">
-              UID: {session.zosUserId} [{session.role}]
-            </span>
-          </div>
-          <button
-            onClick={onLogout}
-            className="text-[10px] font-mono bg-slate-800 hover:bg-red-950/60 hover:text-red-400 text-slate-400 px-2 py-1 rounded border border-slate-700 transition-colors"
-          >
-            Sign Out
-          </button>
-        </div>
+        {session.isAuthenticated && (
+          <>
+            <div className="h-6 w-px bg-slate-800"></div>
+            <div className="flex items-center gap-2.5">
+              <div className="flex flex-col text-right">
+                <span className="text-xs font-semibold text-slate-200">
+                  {session.username}
+                </span>
+                <span className="text-[10px] font-mono text-slate-400">
+                  UID: {session.zosUserId} [{session.role}]
+                </span>
+              </div>
+              <button
+                onClick={onLogout}
+                className="text-[10px] font-mono bg-slate-800 hover:bg-red-950/60 hover:text-red-400 text-slate-400 px-2 py-1 rounded border border-slate-700 transition-colors"
+              >
+                Sign Out
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </header>
   );

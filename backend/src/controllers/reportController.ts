@@ -1,7 +1,8 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { pool } from '../database/db';
+import { AuthenticatedRequest } from '../middleware/auth';
 
-export async function getDashboardSummary(req: Request, res: Response) {
+export async function getDashboardSummary(req: AuthenticatedRequest, res: Response) {
   try {
     const studentsCount = await pool.query('SELECT COUNT(*) FROM students');
     const schemesCount = await pool.query('SELECT COUNT(*) FROM scholarship_schemes');
@@ -37,32 +38,33 @@ export async function getDashboardSummary(req: Request, res: Response) {
       SELECT * FROM batch_jobs ORDER BY created_at DESC LIMIT 5
     `);
 
+    const totApps = parseInt(appsCount.rows[0].count, 10);
+    const elgApps = parseInt(eligibleCount.rows[0].count, 10);
+
     return res.json({
       summary: {
         totalStudents: parseInt(studentsCount.rows[0].count, 10),
         totalSchemes: parseInt(schemesCount.rows[0].count, 10),
-        totalApplications: parseInt(appsCount.rows[0].count, 10),
-        eligibleApplications: parseInt(eligibleCount.rows[0].count, 10),
+        totalApplications: totApps,
+        eligibleApplications: elgApps,
         rejectedApplications: parseInt(rejectedCount.rows[0].count, 10),
         pendingApplications: parseInt(pendingCount.rows[0].count, 10),
         totalDisbursed: parseFloat(disbTotals.rows[0].total_disbursed),
         settledAmount: parseFloat(disbTotals.rows[0].settled_amount),
         pendingDisbursementAmount: parseFloat(disbTotals.rows[0].pending_amount),
-        approvalRate: parseInt(appsCount.rows[0].count, 10) > 0
-          ? ((parseInt(eligibleCount.rows[0].count, 10) / parseInt(appsCount.rows[0].count, 10)) * 100).toFixed(1)
-          : '0.0',
+        approvalRate: totApps > 0 ? ((elgApps / totApps) * 100).toFixed(1) : '0.0',
       },
       rejectionsByReason: rejectionsByReason.rows,
       departmentDistribution: deptDistribution.rows,
       recentBatches: recentBatches.rows,
     });
   } catch (err: any) {
-    console.error('getDashboardSummary error:', err);
+    console.error('getDashboardSummary error:', err.message || err);
     return res.status(500).json({ error: 'Failed to retrieve dashboard summary' });
   }
 }
 
-export async function getEligibilityResults(req: Request, res: Response) {
+export async function getEligibilityResults(req: AuthenticatedRequest, res: Response) {
   try {
     const { batch_id, status, reason_code } = req.query;
     let query = `
@@ -101,9 +103,9 @@ export async function getEligibilityResults(req: Request, res: Response) {
   }
 }
 
-export async function getAuditLogs(req: Request, res: Response) {
+export async function getAuditLogs(req: AuthenticatedRequest, res: Response) {
   try {
-    const result = await pool.query('SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT 100');
+    const result = await pool.query('SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT 50');
     return res.json({ logs: result.rows });
   } catch (err: any) {
     return res.status(500).json({ error: 'Failed to retrieve audit logs' });

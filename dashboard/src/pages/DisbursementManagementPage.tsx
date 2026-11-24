@@ -1,19 +1,24 @@
 import React, { useState } from 'react';
-import { CreditCard, Download, ShieldCheck, CheckCircle2, Clock, AlertCircle, FileText, RefreshCw } from 'lucide-react';
+import { CreditCard, Download, ShieldCheck, CheckCircle2, Clock, AlertCircle, FileText, RefreshCw, Check } from 'lucide-react';
 import { DisbursementRecord } from '../types';
+import { api } from '../services/api';
 
 interface DisbursementManagementPageProps {
   disbursements: DisbursementRecord[];
   onUpdateDisbursements: (updated: DisbursementRecord[]) => void;
+  onRefresh?: () => void;
 }
 
 export const DisbursementManagementPage: React.FC<DisbursementManagementPageProps> = ({
   disbursements,
-  onUpdateDisbursements
+  onUpdateDisbursements,
+  onRefresh,
 }) => {
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'S' | 'P' | 'F'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [isSettling, setIsSettling] = useState(false);
+  const [settleError, setSettleError] = useState<string | null>(null);
+  const [settlingId, setSettlingId] = useState<string | null>(null);
 
   const filtered = disbursements.filter(d => {
     const matchSearch = d.ref_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -28,16 +33,55 @@ export const DisbursementManagementPage: React.FC<DisbursementManagementPageProp
   const settledCount = disbursements.filter(d => d.status === 'S').length;
   const pendingCount = disbursements.filter(d => d.status === 'P').length;
 
-  const handleSimulateSettlement = () => {
+  const handleSettleAllPending = async () => {
+    const pendingList = disbursements.filter(d => d.status === 'P');
+    if (pendingList.length === 0) return;
+
     setIsSettling(true);
-    setTimeout(() => {
-      const updated = disbursements.map(d => ({
-        ...d,
-        status: 'S' as const
-      }));
-      onUpdateDisbursements(updated);
+    setSettleError(null);
+
+    try {
+      for (const d of pendingList) {
+        await api.settleDisbursement(d.disb_id || d.ref_id);
+      }
+      if (onRefresh) {
+        await onRefresh();
+      } else {
+        const updated = disbursements.map(d => ({
+          ...d,
+          status: 'S' as const,
+        }));
+        onUpdateDisbursements(updated);
+      }
+    } catch (err: any) {
+      setSettleError(`Settlement error: ${err.message}`);
+    } finally {
       setIsSettling(false);
-    }, 1200);
+    }
+  };
+
+  const handleSettleIndividual = async (d: DisbursementRecord) => {
+    const targetId = d.disb_id || d.ref_id;
+    setSettlingId(targetId);
+    setSettleError(null);
+
+    try {
+      await api.settleDisbursement(targetId);
+      if (onRefresh) {
+        await onRefresh();
+      } else {
+        const updated = disbursements.map(item =>
+          (item.disb_id === targetId || item.ref_id === targetId)
+            ? { ...item, status: 'S' as const }
+            : item
+        );
+        onUpdateDisbursements(updated);
+      }
+    } catch (err: any) {
+      setSettleError(`Failed to settle ${targetId}: ${err.message}`);
+    } finally {
+      setSettlingId(null);
+    }
   };
 
   const exportCsv = () => {
@@ -103,60 +147,62 @@ export const DisbursementManagementPage: React.FC<DisbursementManagementPageProp
 
         <div className="flex items-center gap-2.5">
           <button
-            onClick={handleSimulateSettlement}
-            disabled={isSettling || pendingCount === 0}
-            className={`flex items-center gap-2 text-xs font-semibold px-3.5 py-2 rounded-lg border transition-all ${
-              pendingCount === 0
-                ? 'bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed'
-                : 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-500 shadow active:scale-95'
-            }`}
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isSettling ? 'animate-spin' : ''}`} />
-            <span>{isSettling ? 'Settling...' : 'Simulate Bank Settlement'}</span>
-          </button>
-
-          <button
             onClick={exportApbsDat}
-            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3.5 py-2 rounded-lg border border-slate-700 transition-colors shadow-sm"
+            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 transition-colors shadow-sm"
+            title="Download fixed-width 120-byte APBS batch payment file"
           >
-            <FileText className="w-4 h-4 text-indigo-400" />
-            <span>Download .dat</span>
+            <FileText className="w-4 h-4 text-emerald-400" />
+            <span>Export APBS .DAT</span>
           </button>
 
           <button
             onClick={exportCsv}
-            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3.5 py-2 rounded-lg border border-slate-700 transition-colors shadow-sm"
+            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 transition-colors shadow-sm"
           >
             <Download className="w-4 h-4 text-ibm-cyan" />
-            <span>Export CSV</span>
+            <span>Export Payments CSV</span>
           </button>
+
+          {pendingCount > 0 && (
+            <button
+              onClick={handleSettleAllPending}
+              disabled={isSettling}
+              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 text-white text-xs font-semibold px-3.5 py-2 rounded-lg shadow-sm transition-all active:scale-95"
+            >
+              {isSettling ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <CreditCard className="w-4 h-4" />
+              )}
+              <span>{isSettling ? 'Settling in Database...' : `Settle All (${pendingCount})`}</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Summary KPI Strip */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-sm">
-          <div className="text-xs text-slate-400 font-mono">Total Allocation (INR)</div>
-          <div className="text-2xl font-bold font-mono text-indigo-400 mt-1">
-            ₹{totalDisbursed.toLocaleString()}
-          </div>
-          <div className="text-[10px] text-slate-400 mt-1">Approved by batch engine</div>
+      {settleError && (
+        <div className="p-3 bg-red-950/80 border border-red-700 rounded-lg text-xs text-red-200 flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+          <span>{settleError}</span>
         </div>
+      )}
 
+      {/* Metrics Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-sm">
-          <div className="text-xs text-slate-400 font-mono">Instructions Count</div>
-          <div className="text-2xl font-bold font-mono text-slate-100 mt-1">
-            {disbursements.length} Payments
-          </div>
-          <div className="text-[10px] text-slate-400 mt-1">Eligible candidates</div>
-        </div>
-
-        <div className="bg-slate-900 border border-emerald-900/40 p-4 rounded-xl shadow-sm">
-          <div className="text-xs text-emerald-400 font-mono">Settled (Success)</div>
+          <div className="text-xs text-slate-400 font-mono">Total Approved Value</div>
           <div className="text-2xl font-bold font-mono text-emerald-400 mt-1">
-            {settledCount} Transferred
+            INR {totalDisbursed.toLocaleString()}
           </div>
-          <div className="text-[10px] text-emerald-400/70 mt-1">Confirmed with UTR</div>
+          <div className="text-[10px] text-slate-500 mt-1">Calculated via COBOL slab rules</div>
+        </div>
+
+        <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-sm">
+          <div className="text-xs text-slate-400 font-mono">Settled Transfers</div>
+          <div className="text-2xl font-bold font-mono text-slate-100 mt-1">
+            {settledCount} Instructions
+          </div>
+          <div className="text-[10px] text-emerald-400/80 mt-1">UTR confirmation logged</div>
         </div>
 
         <div className="bg-slate-900 border border-amber-900/40 p-4 rounded-xl shadow-sm">
@@ -203,6 +249,7 @@ export const DisbursementManagementPage: React.FC<DisbursementManagementPageProp
                 <th className="py-3 px-4">Value Date</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4 text-right">Amount (INR)</th>
+                <th className="py-3 px-4 text-center">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
@@ -242,8 +289,27 @@ export const DisbursementManagementPage: React.FC<DisbursementManagementPageProp
                       </span>
                     )}
                   </td>
-                  <td className="py-3 px-4 text-right font-bold text-slate-100 text-sm">
-                    ₹{d.amount.toLocaleString()}
+                  <td className="py-3 px-4 text-right font-bold text-slate-200">
+                    {d.amount.toLocaleString()}
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    {d.status === 'P' ? (
+                      <button
+                        onClick={() => handleSettleIndividual(d)}
+                        disabled={settlingId === (d.disb_id || d.ref_id)}
+                        className="bg-emerald-700/80 hover:bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-semibold transition-all inline-flex items-center gap-1"
+                        title="Settle this disbursement with UTR"
+                      >
+                        {settlingId === (d.disb_id || d.ref_id) ? (
+                          <RefreshCw className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Check className="w-3 h-3" />
+                        )}
+                        <span>Settle</span>
+                      </button>
+                    ) : (
+                      <span className="text-[10px] text-slate-500 font-mono">Done</span>
+                    )}
                   </td>
                 </tr>
               ))}

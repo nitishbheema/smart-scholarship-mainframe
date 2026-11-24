@@ -19,24 +19,42 @@ export interface BatchExecutionResult {
 }
 
 export class CobolService {
+  /**
+   * Resolves the compiled native COBOL executable path across environments:
+   * 1. Local Windows (MAIN0001.exe)
+   * 2. Linux Docker Container (/app/mainframe/bin/MAIN0001)
+   * 3. System PATH fallback
+   */
   private static getCobolExecutablePath(): string {
-    // 1. Check local windows binary
-    const winBin = path.resolve(__dirname, '../../../mainframe/bin/MAIN0001.exe');
-    if (fs.existsSync(winBin)) {
-      return winBin;
+    const candidates = [
+      // Relative to current working directory
+      path.resolve(process.cwd(), 'mainframe/bin/MAIN0001.exe'),
+      path.resolve(process.cwd(), 'mainframe/bin/MAIN0001'),
+      // Relative to compiled dist/services directory
+      path.resolve(__dirname, '../../../mainframe/bin/MAIN0001.exe'),
+      path.resolve(__dirname, '../../../mainframe/bin/MAIN0001'),
+      path.resolve(__dirname, '../../mainframe/bin/MAIN0001.exe'),
+      path.resolve(__dirname, '../../mainframe/bin/MAIN0001'),
+    ];
+
+    for (const cand of candidates) {
+      if (fs.existsSync(cand)) {
+        return cand;
+      }
     }
-    // 2. Check Linux compiled binary in mainframe/bin
-    const linuxBin = path.resolve(__dirname, '../../../mainframe/bin/MAIN0001');
-    if (fs.existsSync(linuxBin)) {
-      return linuxBin;
-    }
-    // 3. Fallback to PATH or relative
+
     return process.platform === 'win32' ? 'MAIN0001.exe' : 'MAIN0001';
   }
 
-  private static cleanStr(val: any): string {
+  public static cleanStr(val: any): string {
     if (val === null || val === undefined) return '';
     return String(val).replace(/\0/g, '').trim();
+  }
+
+  public static maskBankAccount(acc: string): string {
+    const clean = CobolService.cleanStr(acc);
+    if (clean.length <= 4) return '****';
+    return '*'.repeat(clean.length - 4) + clean.slice(-4);
   }
 
   private static formatFixedNumber(num: number, integerDigits: number, decimalDigits: number): string {
@@ -45,11 +63,33 @@ export class CobolService {
     return val.toString().padStart(totalDigits, '0');
   }
 
-  public static async executeBatch(customBatchId?: string): Promise<BatchExecutionResult> {
+  /**
+   * Orchestrates the complete batch execution workflow:
+   * 1. Prevents concurrent batch execution collisions.
+   * 2. Extracts pending applications from PostgreSQL.
+   * 3. Formats fixed-width 120-byte APPIN dataset.
+   * 4. Spawns compiled GnuCOBOL native binary with isolated DD dataset assignments.
+   * 5. Parses ELGOUT (120B), REJOUT (120B), DISBOUT (120B), RPTOUT (133B).
+   * 6. Prevents duplicate disbursement instructions.
+   * 7. Commits results to PostgreSQL within an ACID transaction.
+   */
+  public static async executeBatch(customBatchId?: string, executedBy = 'OPERATOR'): Promise<BatchExecutionResult> {
     const startTime = Date.now();
+
+    // 1. Prevent duplicate concurrent batch execution
+    const runningCheck = await pool.query("SELECT batch_id, start_time FROM batch_jobs WHERE status = 'RUNNING';");
+    if (runningCheck.rows.length > 0) {
+      const runningJob = runningCheck.rows[0];
+      throw new Error(
+        `Batch execution rejected: Batch job '${runningJob.batch_id}' is currently RUNNING ` +
+        `(started at ${runningJob.start_time}). Concurrent batch execution is prohibited to maintain ledger integrity.`
+      );
+    }
+
     const batchId = customBatchId || `BAT${new Date().toISOString().replace(/[-:T.Z]/g, '').slice(0, 10)}`;
 
-    const workDir = path.resolve(__dirname, '../../temp_run', batchId);
+    // Create isolated per-batch temporary working directory
+    const workDir = path.resolve(process.cwd(), 'temp_run', batchId);
     if (!fs.existsSync(workDir)) {
       fs.mkdirSync(workDir, { recursive: true });
     }
@@ -62,7 +102,7 @@ export class CobolService {
     const rptOutPath = path.join(workDir, 'RPTOUT.dat');
     const stuMastPath = path.join(workDir, 'STUMAST.dat');
 
-    // 1. Fetch applications to process from PostgreSQL
+    // 2. Fetch applications to process from PostgreSQL
     const appsResult = await pool.query(`
       SELECT a.application_id, a.student_id, a.scheme_code, a.submission_date,
              a.cgpa, a.attendance, a.annual_family_income, a.active_arrears,
@@ -77,24 +117,24 @@ export class CobolService {
       throw new Error('No pending scholarship applications found to process.');
     }
 
-    // 2. Format 120-byte fixed-width lines for APPIN
+    // 3. Format 120-byte fixed-width lines for APPIN (matches SCHAPP.cpy)
     const appLines: string[] = [];
     for (const app of apps) {
       const appId = (app.application_id || '').padEnd(10, ' ').slice(0, 10);
       const stuId = (app.student_id || '').padEnd(10, ' ').slice(0, 10);
       const schCode = (app.scheme_code || '').padEnd(6, ' ').slice(0, 6);
-      
+
       const subDate = new Date(app.submission_date || Date.now());
       const dateStr = subDate.toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD (8)
-      
+
       const cgpaStr = CobolService.formatFixedNumber(parseFloat(app.cgpa) || 0, 2, 2); // 4
       const attnStr = CobolService.formatFixedNumber(parseFloat(app.attendance) || 0, 3, 2); // 5
       const incStr = CobolService.formatFixedNumber(parseFloat(app.annual_family_income) || 0, 8, 2); // 10
       const arrsStr = CobolService.formatFixedNumber(parseInt(app.active_arrears, 10) || 0, 2, 0); // 2
-      
-      const bankAcc = (app.bank_account_no || '').padEnd(20, ' ').slice(0, 20); // 20
+
+      const bankAcc = (app.bank_account_no || '').padEnd(18, ' ').slice(0, 18); // 18
       const bankIfsc = (app.bank_ifsc || '').padEnd(11, ' ').slice(0, 11); // 11
-      const filler = ''.padEnd(34, ' '); // 34
+      const filler = ''.padEnd(36, ' '); // 36
 
       // Exactly 120 bytes
       const line = `${appId}${stuId}${schCode}${dateStr}${cgpaStr}${attnStr}${incStr}${arrsStr}${bankAcc}${bankIfsc}${filler}`;
@@ -103,15 +143,15 @@ export class CobolService {
 
     fs.writeFileSync(appInPath, appLines.join('\n') + '\n', 'utf-8');
 
-    // 3. Create initial batch job record in PostgreSQL
+    // 4. Create initial batch job record in PostgreSQL
     await pool.query(`
       INSERT INTO batch_jobs (batch_id, job_name, status, total_read, start_time, execution_engine)
       VALUES ($1, 'BATELG01', 'RUNNING', $2, NOW(), 'GnuCOBOL Native Binary (MAIN0001)')
       ON CONFLICT (batch_id) DO UPDATE SET status = 'RUNNING', start_time = NOW();
     `, [batchId, apps.length]);
 
-    // 4. Set environment variables for COBOL execution
-    const cobRoot = path.resolve(__dirname, '../../../temp_tools/gnucobol-3.1.2-windows-mingw-x64');
+    // 5. Configure environment variables for COBOL execution
+    const cobRoot = path.resolve(process.cwd(), 'temp_tools/gnucobol-3.1.2-windows-mingw-x64');
     const envVars: NodeJS.ProcessEnv = {
       ...process.env,
       DD_APPIN: appInPath,
@@ -131,7 +171,7 @@ export class CobolService {
 
     const execPath = CobolService.getCobolExecutablePath();
 
-    // 5. Spawn actual native COBOL executable
+    // 6. Spawn actual native COBOL executable
     const runCobol = (): Promise<{ stdout: string; stderr: string; code: number }> => {
       return new Promise((resolve, reject) => {
         let stdout = '';
@@ -160,11 +200,22 @@ export class CobolService {
       });
     };
 
-    const { stdout, stderr, code } = await runCobol();
+    let cobolResult: { stdout: string; stderr: string; code: number };
+    try {
+      cobolResult = await runCobol();
+    } catch (execErr: any) {
+      await pool.query(
+        "UPDATE batch_jobs SET status = 'FAILED', return_code = 'RC 0016', end_time = NOW() WHERE batch_id = $1",
+        [batchId]
+      );
+      throw new Error(`Failed to execute native COBOL executable (${execPath}): ${execErr.message}`);
+    }
+
+    const { stdout, stderr, code } = cobolResult;
     const durationMs = Date.now() - startTime;
     const returnCode = code === 0 ? 'RC 0000' : code === 4 ? 'RC 0004' : `RC ${code.toString().padStart(4, '0')}`;
 
-    // 6. Read and parse output datasets
+    // 7. Read and parse output datasets
     const elgLines = fs.existsSync(elgOutPath)
       ? fs.readFileSync(elgOutPath, 'utf-8').split('\n').filter(l => l.trim().length >= 40)
       : [];
@@ -178,7 +229,7 @@ export class CobolService {
       ? fs.readFileSync(rptOutPath, 'utf-8')
       : stdout);
 
-    // 7. Parse eligible records
+    // 8. Parse eligible records
     const eligibleRecords: any[] = [];
     let totalDisb = 0;
 
@@ -202,7 +253,7 @@ export class CobolService {
       });
     }
 
-    // 8. Parse rejected records
+    // 9. Parse rejected records
     const rejectedRecords: any[] = [];
     let dupCount = 0;
 
@@ -229,7 +280,7 @@ export class CobolService {
       });
     }
 
-    // 9. Parse disbursement instructions
+    // 10. Parse disbursement instructions with Duplicate Disbursement Prevention
     const disbursementRecords: any[] = [];
     for (const line of disbLines) {
       const rawRefId = CobolService.cleanStr(line.slice(1, 13));
@@ -248,7 +299,7 @@ export class CobolService {
       });
     }
 
-    // 10. Persist results in PostgreSQL Transaction
+    // 11. Persist results in PostgreSQL Transaction
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -320,29 +371,35 @@ export class CobolService {
         `, [rej.reasonCode, batchId, rej.appId]);
       }
 
-      // Save disbursement records
+      // Save disbursement records with duplicate disbursement protection
       for (const d of disbursementRecords) {
-        await client.query(`
-          INSERT INTO disbursement_records (
-            disbursement_id, batch_id, application_id, student_id,
-            award_amount, bank_account_no, bank_ifsc, payment_status,
-            payment_date, utr_number
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-          ON CONFLICT (disbursement_id) DO UPDATE SET
-            award_amount = EXCLUDED.award_amount,
-            utr_number = EXCLUDED.utr_number;
-        `, [
-          d.disbId, batchId, d.appId, d.stuId,
-          d.amount, d.bankAcc, d.bankIfsc, d.status,
-          d.paymentDate, d.utrNumber
-        ]);
+        // Check if an existing settled or pending disbursement already exists for this application
+        const existingDisb = await client.query(
+          'SELECT disbursement_id, payment_status FROM disbursement_records WHERE application_id = $1',
+          [d.appId]
+        );
+
+        if (existingDisb.rows.length === 0) {
+          await client.query(`
+            INSERT INTO disbursement_records (
+              disbursement_id, batch_id, application_id, student_id,
+              award_amount, bank_account_no, bank_ifsc, payment_status,
+              payment_date, utr_number
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            ON CONFLICT (disbursement_id) DO NOTHING;
+          `, [
+            d.disbId, batchId, d.appId, d.stuId,
+            d.amount, d.bankAcc, d.bankIfsc, d.status,
+            d.paymentDate, d.utrNumber
+          ]);
+        }
       }
 
-      // Audit Log entry
+      // Audit Log with masked account information
       await client.query(`
         INSERT INTO audit_logs (action, performed_by, details)
-        VALUES ('BATCH_EXECUTE_COBOL', 'COBOL_BATCH_ENGINE', $1)
-      `, [JSON.stringify({
+        VALUES ('BATCH_EXECUTE_COBOL', $1, $2)
+      `, [executedBy, JSON.stringify({
         batchId,
         returnCode,
         totalRead: apps.length,

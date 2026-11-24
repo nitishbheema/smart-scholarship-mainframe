@@ -1,24 +1,31 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { CobolService } from '../services/cobolService';
 import { pool } from '../database/db';
+import { AuthenticatedRequest } from '../middleware/auth';
 
-export async function executeBatch(req: Request, res: Response) {
+export async function executeBatch(req: AuthenticatedRequest, res: Response) {
   try {
     const { batchId } = req.body;
-    const result = await CobolService.executeBatch(batchId);
+    const actor = req.user?.username || 'OPERATOR';
+    const result = await CobolService.executeBatch(batchId, actor);
     return res.json({
       message: 'COBOL Batch processing executed successfully',
       result,
     });
   } catch (err: any) {
-    console.error('executeBatch error:', err);
+    console.error('executeBatch error:', err.message || err);
+    if (err.message && err.message.includes('currently RUNNING')) {
+      return res.status(409).json({
+        error: err.message,
+      });
+    }
     return res.status(500).json({
-      error: 'Batch processing execution failed: ' + err.message,
+      error: 'Batch processing execution failed: ' + (err.message || 'Unknown error'),
     });
   }
 }
 
-export async function getBatchJobs(req: Request, res: Response) {
+export async function getBatchJobs(req: AuthenticatedRequest, res: Response) {
   try {
     const result = await pool.query('SELECT * FROM batch_jobs ORDER BY created_at DESC');
     return res.json({ jobs: result.rows });
@@ -27,12 +34,12 @@ export async function getBatchJobs(req: Request, res: Response) {
   }
 }
 
-export async function getBatchJobById(req: Request, res: Response) {
+export async function getBatchJobById(req: AuthenticatedRequest, res: Response) {
   const { id } = req.params;
   try {
     const jobRes = await pool.query('SELECT * FROM batch_jobs WHERE batch_id = $1', [id]);
     if (jobRes.rows.length === 0) {
-      return res.status(404).json({ error: 'Batch job not found' });
+      return res.status(404).json({ error: `Batch job '${id}' not found` });
     }
 
     const eligRes = await pool.query(

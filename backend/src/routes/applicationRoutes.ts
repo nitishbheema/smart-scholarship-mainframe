@@ -6,13 +6,21 @@ import {
   createApplication,
   bulkUploadApplications,
 } from '../controllers/applicationController';
+import { authenticateToken, requireRole } from '../middleware/auth';
 
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB restriction
+});
+
 const router = Router();
 
-router.get('/', getApplications);
-router.get('/:id', getApplicationById);
-router.post('/', createApplication);
-router.post('/bulk-csv', upload.single('file'), bulkUploadApplications);
+// Read operations - all authenticated users
+router.get('/', authenticateToken, getApplications);
+router.get('/:id', authenticateToken, getApplicationById);
+
+// Application ingestion - ADMIN and OPERATOR
+router.post('/', authenticateToken, requireRole(['ADMIN', 'OPERATOR']), createApplication);
+router.post('/bulk-csv', authenticateToken, requireRole(['ADMIN', 'OPERATOR']), upload.single('file'), bulkUploadApplications);
 
 export default router;

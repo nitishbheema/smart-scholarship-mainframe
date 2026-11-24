@@ -8,7 +8,9 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "migrate": "tsx src/database/migrate.ts",
-    "seed": "tsx src/database/seed.ts"
+    "init-admin": "tsx src/database/initAdmin.ts",
+    "seed:demo": "tsx src/database/seedDemo.ts",
+    "seed": "tsx src/database/seedDemo.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

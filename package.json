@@ -8,7 +8,11 @@
     "build": "npm run build:backend && npm run build:frontend",
     "start": "cd backend && npm start",
     "dev:backend": "cd backend && npm run dev",
-    "dev:frontend": "cd dashboard && npm run dev"
+    "dev:frontend": "cd dashboard && npm run dev",
+    "test:security": "tsx tests/integration/test_security_and_api.ts",
+    "test:http": "tsx tests/integration/test_http_endpoints.ts",
+    "test:scenarios": "tsx tests/integration/test_all_20_scenarios.ts",
+    "test": "npm run test:security && npm run test:http && npm run test:scenarios"
   },
   "keywords": [
     "cobol",

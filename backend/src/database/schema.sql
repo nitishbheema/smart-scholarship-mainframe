@@ -136,3 +136,9 @@ CREATE INDEX IF NOT EXISTS idx_apps_student ON scholarship_applications(student_
 CREATE INDEX IF NOT EXISTS idx_apps_status ON scholarship_applications(status);
 CREATE INDEX IF NOT EXISTS idx_elig_batch ON eligibility_results(batch_id);
 CREATE INDEX IF NOT EXISTS idx_disb_batch ON disbursement_records(batch_id);
+CREATE INDEX IF NOT EXISTS idx_disb_app ON disbursement_records(application_id);
+CREATE INDEX IF NOT EXISTS idx_disb_status ON disbursement_records(payment_status);
+
+-- Sequences for collision-free concurrent ID generation
+CREATE SEQUENCE IF NOT EXISTS app_id_seq START WITH 100 INCREMENT BY 1;
+CREATE SEQUENCE IF NOT EXISTS disb_id_seq START WITH 100 INCREMENT BY 1;
