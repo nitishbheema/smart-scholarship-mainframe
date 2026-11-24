@@ -1,0 +1,75 @@
+//ALLOCJOB JOB (SCHOLAR,BAT),'ALLOCATE DATASETS',
+//             CLASS=A,MSGCLASS=X,NOTIFY=&SYSUID
+//*-------------------------------------------------------------------*
+//* JCL: ALLOCJOB.JCL                                                 *
+//* PURPOSE: ALLOCATE PARTITIONED DATA SETS (PDS) & SEQUENTIAL FILES  *
+//*          REQUIRED FOR SCHOLARSHIP ELIGIBILITY BATCH PROCESSING    *
+//* ENVIRONMENT: IBM z/OS ENTERPRISE ENVIRONMENT                      *
+//*-------------------------------------------------------------------*
+//STEP010  EXEC PGM=IEFBR14
+//SYSPRINT DD SYSOUT=*
+//*
+//* --- SOURCE & COPYBOOK LIBRARIES (PDS) ---
+//COBSRC   DD DSN=USERID.SCHOLAR.COBOL,
+//            DISP=(NEW,CATLG,DELETE),
+//            SPACE=(CYL,(2,1,10)),
+//            DCB=(RECFM=FB,LRECL=80,BLKSIZE=27920),
+//            UNIT=SYSDA
+//COPYLIB  DD DSN=USERID.SCHOLAR.COPYLIB,
+//            DISP=(NEW,CATLG,DELETE),
+//            SPACE=(CYL,(1,1,10)),
+//            DCB=(RECFM=FB,LRECL=80,BLKSIZE=27920),
+//            UNIT=SYSDA
+//LOADLIB  DD DSN=USERID.SCHOLAR.LOADLIB,
+//            DISP=(NEW,CATLG,DELETE),
+//            SPACE=(CYL,(3,2,10)),
+//            DCB=(RECFM=U,BLKSIZE=32760),
+//            UNIT=SYSDA
+//DBRM     DD DSN=USERID.SCHOLAR.DBRM,
+//            DISP=(NEW,CATLG,DELETE),
+//            SPACE=(CYL,(1,1,10)),
+//            DCB=(RECFM=FB,LRECL=80,BLKSIZE=27920),
+//            UNIT=SYSDA
+//*
+//* --- SEQUENTIAL BATCH INPUT & OUTPUT DATASETS ---
+//APPRAW   DD DSN=USERID.SCHOLAR.DATA.APPL.RAW,
+//            DISP=(NEW,CATLG,DELETE),
+//            SPACE=(TRK,(5,2)),
+//            DCB=(RECFM=FB,LRECL=120,BLKSIZE=27960),
+//            UNIT=SYSDA
+//APPSORT  DD DSN=USERID.SCHOLAR.DATA.APPL.SORTED,
+//            DISP=(NEW,CATLG,DELETE),
+//            SPACE=(TRK,(5,2)),
+//            DCB=(RECFM=FB,LRECL=120,BLKSIZE=27960),
+//            UNIT=SYSDA
+//STUMASTS DD DSN=USERID.SCHOLAR.DATA.STUMAST.SEQ,
+//            DISP=(NEW,CATLG,DELETE),
+//            SPACE=(TRK,(5,2)),
+//            DCB=(RECFM=FB,LRECL=150,BLKSIZE=27900),
+//            UNIT=SYSDA
+//ELIGDATA DD DSN=USERID.SCHOLAR.DATA.ELIG.APPROVED,
+//            DISP=(NEW,CATLG,DELETE),
+//            SPACE=(TRK,(5,2)),
+//            DCB=(RECFM=FB,LRECL=120,BLKSIZE=27960),
+//            UNIT=SYSDA
+//REJDATA  DD DSN=USERID.SCHOLAR.DATA.ELIG.REJECTED,
+//            DISP=(NEW,CATLG,DELETE),
+//            SPACE=(TRK,(5,2)),
+//            DCB=(RECFM=FB,LRECL=120,BLKSIZE=27960),
+//            UNIT=SYSDA
+//DISBDATA DD DSN=USERID.SCHOLAR.DATA.DISB.PAYMENTS,
+//            DISP=(NEW,CATLG,DELETE),
+//            SPACE=(TRK,(5,2)),
+//            DCB=(RECFM=FB,LRECL=120,BLKSIZE=27960),
+//            UNIT=SYSDA
+//EXCDATA  DD DSN=USERID.SCHOLAR.DATA.AUDIT.EXCEPTNS,
+//            DISP=(NEW,CATLG,DELETE),
+//            SPACE=(TRK,(5,2)),
+//            DCB=(RECFM=FB,LRECL=120,BLKSIZE=27960),
+//            UNIT=SYSDA
+//RPTDATA  DD DSN=USERID.SCHOLAR.REPORT.SYSOUT.ARCHIVE,
+//            DISP=(NEW,CATLG,DELETE),
+//            SPACE=(TRK,(10,5)),
+//            DCB=(RECFM=FBA,LRECL=133,BLKSIZE=27930),
+//            UNIT=SYSDA
+//*

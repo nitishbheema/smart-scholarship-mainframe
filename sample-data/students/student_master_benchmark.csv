@@ -1,0 +1,16 @@
+student_id,first_name,last_name,dob,gender,department,year_of_study,semester,email,phone,enroll_date,status
+STU2024001,Aarav,Sharma,2004-03-15,M,CS,3,5,aarav.sharma@univ.edu,9876543210,2022-08-01,A
+STU2024002,Diya,Patel,2003-11-20,F,IT,4,7,diya.patel@univ.edu,9876543211,2021-08-01,A
+STU2024003,Rohan,Verma,2004-07-09,M,ECE,2,3,rohan.verma@univ.edu,9876543212,2023-08-01,A
+STU2024004,Ananya,Iyer,2004-01-25,F,CS,3,5,ananya.iyer@univ.edu,9876543213,2022-08-01,A
+STU2024005,Vikram,Rao,2003-05-18,M,MECH,4,7,vikram.rao@univ.edu,9876543214,2021-08-01,A
+STU2024006,Priya,Nair,2005-09-12,F,IT,1,1,priya.nair@univ.edu,9876543215,2024-08-01,A
+STU2024007,Karthik,Reddy,2004-12-05,M,EEE,2,3,karthik.reddy@univ.edu,9876543216,2023-08-01,A
+STU2024008,Sneha,Kulkarni,2003-08-30,F,CS,4,7,sneha.kulkarni@univ.edu,9876543217,2021-08-01,A
+STU2024009,Aditya,Mishra,2004-04-14,M,CIVL,3,5,aditya.mishra@univ.edu,9876543218,2022-08-01,A
+STU2024010,Meera,Menon,2004-10-22,F,ECE,3,5,meera.menon@univ.edu,9876543219,2022-08-01,A
+STU2024011,Arjun,Gupta,2004-06-11,M,CS,2,3,arjun.gupta@univ.edu,9876543220,2023-08-01,A
+STU2024012,Pooja,Hegde,2003-12-01,F,IT,4,7,pooja.hegde@univ.edu,9876543221,2021-08-01,A
+STU2024013,Siddharth,Sen,2004-02-19,M,MECH,3,5,siddharth.sen@univ.edu,9876543222,2022-08-01,A
+STU2024014,Tanvi,Joshi,2005-01-14,F,ECE,1,2,tanvi.joshi@univ.edu,9876543223,2024-08-01,A
+STU2024015,Naveen,Kumar,2003-04-04,M,EEE,4,8,naveen.kumar@univ.edu,9876543224,2021-08-01,A

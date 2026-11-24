@@ -1,0 +1,12 @@
+1*********************************** STATE SCHOLARSHIP ELIGIBILITY & DISBURSEMENT SYSTEM ********************************************
+ REPORT:   BATCH EXCEPTION AND INTERCEPTION AUDIT         BATCH ID: BAT2024101    DATE: 2026-11-24   PAGE:   1                       
+0------------------------------------------------------------------------------------------------------------------------------------
+ REC NUM   APP ID     STU ID     ERROR CODE  SEV  EXCEPTION MESSAGE                                                                  
+ ------------------------------------------------------------------------------------------------------------------------------------
+ 8         APP2024008 STU2024001 ERR-DUPL    W    STUDENT ALREADY APPLIED FOR SCHOLARSHIP                                            
+ 9         APP2024002 STU2024008 ERR-DUPL    W    DUPLICATE APPLICATION ID DETECTED IN BATCH                                         
+ 10        APP2024010 STU2024009 ERR-VALD    E    BANK IFSC CODE IS MANDATORY                                                        
+ 11        APP2024011 STU2024010 ERR-VALD    E    CGPA OUT OF VALID RANGE 0.00-10.00                                                 
+ 12        APP2024012 STU2024011 ERR-VALD    E    ATTENDANCE OUT OF RANGE 0-100%                                                     
+0====================================================================================================================================
+ TOTAL EXCEPTION RECORDS LOGGED: 5                                                                                                   

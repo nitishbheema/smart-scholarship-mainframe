@@ -1,0 +1,18 @@
+* -----------------------------------------------------------------
+* DFSORT CONTROL CARDS: SORT_APPLICATIONS.SRT
+* PURPOSE: SORT APPLICATION BATCH FILE BY STUDENT ID ASCENDING
+*          AND SUBMISSION DATE DESCENDING
+* RECORD FORMAT: FB, LRECL=120
+* FIELD POSITIONS:
+*   APP-STU-ID: POS 11, LEN 10, CHARACTER (CH, A)
+*   APP-DATE:   POS 27, LEN  8, CHARACTER (CH, D)
+* -----------------------------------------------------------------
+ SORT FIELDS=(11,10,CH,A,27,8,CH,D)
+ RECORD LENGTH=120,TYPE=F
+* -----------------------------------------------------------------
+* OPTIONAL DEDUPLICATION STEP:
+* IF IDENTICAL STUDENT APPLIES TWICE, SUM FIELDS=NONE PICKS FIRST REC
+* AND DISCARDS SUBSEQUENTS TO XSUM DATASET
+* -----------------------------------------------------------------
+ SUM FIELDS=NONE
+ END

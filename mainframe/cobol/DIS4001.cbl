@@ -1,0 +1,155 @@
+      *****************************************************************
+      * PROGRAM:     DIS4001                                          *
+      * SYSTEM:      SMART SCHOLARSHIP ELIGIBILITY & DISBURSEMENT     *
+      * MODULE:      DISBURSEMENT PAYMENT INSTRUCTION PROCESSOR       *
+      * AUTHOR:      MAINFRAME ARCHITECT & COBOL SPECIALIST           *
+      * ENVIRONMENT: IBM ENTERPRISE COBOL FOR z/OS                    *
+      * PURPOSE:     GENERATE ELECTRONIC FUND PAYMENT INSTRUCTIONS    *
+      *              WITH DUPLICATE DISBURSEMENT SHIELDING            *
+      *****************************************************************
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. DIS4001.
+       AUTHOR. SENIOR MAINFRAME DEVELOPER.
+       INSTALLATION. ENTERPRISE ACADEMIC SYSTEMS.
+       DATE-WRITTEN. 2024-10-15.
+       DATE-COMPILED. 2024-10-15.
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. IBM-ZOS.
+       OBJECT-COMPUTER. IBM-ZOS.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  WS-PROGRAM-CONSTANTS.
+           05  WS-PGM-NAME             PIC X(08) VALUE 'DIS4001 '.
+           05  WS-MAX-DISBURSED        PIC 9(04) VALUE 500.
+
+       01  WS-DISB-INTERNAL-STATE.
+           05  WS-SEQ-NUM              PIC 9(06) VALUE 1.
+           05  WS-DISBURSED-COUNT      PIC 9(04) VALUE 0.
+           05  WS-TOTAL-AMOUNT-SUM     PIC 9(10)V99 VALUE 0.
+           05  WS-CURRENT-DATE-YMD.
+               10  WS-CURR-YYYY        PIC 9(04).
+               10  WS-CURR-MM          PIC 9(02).
+               10  WS-CURR-DD          PIC 9(02).
+           05  WS-CURRENT-TIME-HMS.
+               10  WS-CURR-HH          PIC 9(02).
+               10  WS-CURR-MIN         PIC 9(02).
+               10  WS-CURR-SS          PIC 9(02).
+
+      * --- PAID RECORDS TABLE (DUPLICATE DISBURSEMENT PREVENTION) ---
+       01  WS-PAID-HISTORY-TABLE.
+           05  WS-PAID-COUNT           PIC 9(04) VALUE 0.
+           05  WS-PAID-ENTRIES OCCURS 500 TIMES
+               INDEXED BY PAID-IDX.
+               10  WS-PAID-APP-ID      PIC X(10).
+               10  WS-PAID-STU-ID      PIC X(10).
+
+       LINKAGE SECTION.
+      * --- INPUT ELIGIBILITY RESULT ---
+       COPY ELIGREC.
+
+      * --- INPUT APPLICATION (FOR BANK DETAILS) ---
+       COPY SCHAPP.
+
+      * --- OUTPUT DISBURSEMENT INSTRUCTION RECORD ---
+       COPY DISBREC.
+
+      * --- DISBURSEMENT COMMUNICATION AREA ---
+       01  LS-DISB-COMM-AREA.
+           05  LS-DISB-RETURN-CODE     PIC 9(04).
+               88  LS-DISB-RC-OK       VALUE 0000.
+               88  LS-DISB-RC-DUP      VALUE 0008.
+               88  LS-DISB-RC-INV-AMT  VALUE 0012.
+               88  LS-DISB-RC-TBL-FULL VALUE 0016.
+           05  LS-DISB-ERROR-MSG       PIC X(45).
+           05  LS-DISB-BATCH-TOTAL     PIC 9(10)V99.
+           05  LS-DISB-RECORD-COUNT    PIC 9(06).
+
+       PROCEDURE DIVISION USING ELIGIBILITY-RESULT-RECORD
+                                SCHOLARSHIP-APP-RECORD
+                                DISBURSEMENT-RECORD
+                                LS-DISB-COMM-AREA.
+
+       0000-MAIN-DISBURSEMENT.
+           INITIALIZE LS-DISB-COMM-AREA
+           SET LS-DISB-RC-OK TO TRUE
+           MOVE SPACES TO LS-DISB-ERROR-MSG
+
+           MOVE FUNCTION CURRENT-DATE(1:8) TO WS-CURRENT-DATE-YMD
+           MOVE FUNCTION CURRENT-DATE(9:6) TO WS-CURRENT-TIME-HMS
+
+           IF ELG-AWARD-AMOUNT <= ZERO
+               SET LS-DISB-RC-INV-AMT TO TRUE
+               MOVE 'DISBURSEMENT AMOUNT MUST BE POSITIVE'
+                 TO LS-DISB-ERROR-MSG
+               GOBACK
+           END-IF
+
+           PERFORM 1000-CHECK-DUPLICATE-PAYMENT
+           IF NOT LS-DISB-RC-OK
+               GOBACK
+           END-IF
+
+           PERFORM 2000-BUILD-PAYMENT-RECORD
+           PERFORM 3000-RECORD-PAYMENT-AUDIT
+
+           MOVE WS-TOTAL-AMOUNT-SUM TO LS-DISB-BATCH-TOTAL
+           MOVE WS-DISBURSED-COUNT  TO LS-DISB-RECORD-COUNT
+
+           GOBACK.
+
+       1000-CHECK-DUPLICATE-PAYMENT.
+      *    PREVENT MULTIPLE DISBURSEMENTS TO SAME STUDENT OR APPLICATION
+           IF WS-PAID-COUNT > 0
+               PERFORM VARYING PAID-IDX FROM 1 BY 1
+                 UNTIL PAID-IDX > WS-PAID-COUNT
+                   IF WS-PAID-APP-ID(PAID-IDX) = ELG-APP-ID OR
+                      WS-PAID-STU-ID(PAID-IDX) = ELG-STU-ID
+                       SET LS-DISB-RC-DUP TO TRUE
+                       MOVE 'DUPLICATE DISBURSEMENT INTERCEPTED'
+                         TO LS-DISB-ERROR-MSG
+                       EXIT PARAGRAPH
+                   END-IF
+               END-PERFORM
+           END-IF.
+
+       2000-BUILD-PAYMENT-RECORD.
+           INITIALIZE DISBURSEMENT-RECORD
+           MOVE 'D' TO DISB-RECORD-TYPE
+           MOVE ELG-APP-ID TO DISB-APP-ID
+           MOVE ELG-STU-ID TO DISB-STU-ID
+           MOVE ELG-AWARD-AMOUNT TO DISB-AMOUNT
+           MOVE APP-BANK-AC-NUM TO DISB-BANK-AC-NUM
+           MOVE APP-BANK-IFSC TO DISB-BANK-IFSC
+           MOVE 'P' TO DISB-STATUS
+           MOVE WS-CURRENT-DATE-YMD TO DISB-VALUE-DATE
+           MOVE ELG-BATCH-ID TO DISB-BATCH-ID
+
+      *    GENERATE SYSTEM DISBURSEMENT REFERENCE ID
+           STRING 'DSB' WS-CURR-YYYY WS-SEQ-NUM
+                  DELIMITED BY SIZE
+                  INTO DISB-REF-ID
+           END-STRING
+
+      *    GENERATE UNIQUE SIMULATED UTR (BANK TRANSACTION NUMBER)
+           STRING 'UTR' WS-CURRENT-DATE-YMD WS-SEQ-NUM 'IN'
+                  DELIMITED BY SIZE
+                  INTO DISB-UTR-NUMBER
+           END-STRING
+
+           ADD 1 TO WS-SEQ-NUM
+           ADD ELG-AWARD-AMOUNT TO WS-TOTAL-AMOUNT-SUM
+           ADD 1 TO WS-DISBURSED-COUNT.
+
+       3000-RECORD-PAYMENT-AUDIT.
+           IF WS-PAID-COUNT < WS-MAX-DISBURSED
+               ADD 1 TO WS-PAID-COUNT
+               MOVE ELG-APP-ID TO WS-PAID-APP-ID(WS-PAID-COUNT)
+               MOVE ELG-STU-ID TO WS-PAID-STU-ID(WS-PAID-COUNT)
+           ELSE
+               SET LS-DISB-RC-TBL-FULL TO TRUE
+               MOVE 'DISBURSEMENT HISTORY LOG TABLE FULL'
+                 TO LS-DISB-ERROR-MSG
+           END-IF.

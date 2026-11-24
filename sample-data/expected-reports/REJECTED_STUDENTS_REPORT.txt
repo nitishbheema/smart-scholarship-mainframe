@@ -1,0 +1,18 @@
+1*********************************** STATE SCHOLARSHIP ELIGIBILITY & DISBURSEMENT SYSTEM ********************************************
+ REPORT:   REJECTED CANDIDATES AUDIT ROSTER               BATCH ID: BAT2024101    DATE: 2026-11-24   PAGE:   1                       
+0------------------------------------------------------------------------------------------------------------------------------------
+ APP ID     STU ID     NAME                           SCHEME   CGPA   ATTN%   FAMILY INCOME  ARRS  REASON CODE REJECTION REASON      
+ ------------------------------------------------------------------------------------------------------------------------------------
+ APP2024004 STU2024004 Ananya Iyer                    MERIT1   6.80   85.00%     150,000.00    0   REJ-CGPA    CGPA BELOW 7.50 THRESHOLD     
+ APP2024005 STU2024005 Vikram Rao                     MERIT1   8.40   68.50%     175,000.00    0   REJ-ATTN    ATTENDANCE BELOW 75% MINIMUM  
+ APP2024006 STU2024006 Priya Nair                     MERIT1   8.90   91.00%     360,000.00    0   REJ-INCOME  INCOME EXCEEDS RS 2,50,000    
+ APP2024007 STU2024007 Karthik Reddy                  MERIT1   8.20   84.00%     160,000.00    2   REJ-ARREAR  ACTIVE ARREARS PRESENT        
+ APP2024008 STU2024001 Aarav Sharma                   MERIT1   9.45   88.50%     180,000.00    0   REJ-DUPAPP  STUDENT ALREADY APPLIED FOR SCHOLARSHIP
+ APP2024002 STU2024008 Sneha Kulkarni                 MERIT1   9.10   89.00%     140,000.00    0   REJ-DUPAPP  DUPLICATE APPLICATION ID DETECTED IN BATCH
+ APP2024010 STU2024009 Aditya Mishra                  MERIT1   8.15   81.00%     200,000.00    0   REJ-INVDAT  BANK IFSC CODE IS MANDATORY   
+ APP2024011 STU2024010 Meera Menon                    MERIT1  11.50   88.00%     170,000.00    0   REJ-INVDAT  CGPA OUT OF VALID RANGE 0.00-10.00
+ APP2024012 STU2024011 Arjun Gupta                    MERIT1   8.70  105.00%     190,000.00    0   REJ-INVDAT  ATTENDANCE OUT OF RANGE 0-100%
+ APP2024013 STU2024012 Pooja Hegde                    MERIT1   6.50   62.00%     400,000.00    1   REJ-MULTPL  MULTIPLE CRITERIA FAILED      
+0====================================================================================================================================
+ TOTAL REJECTED APPLICATIONS:   10                                                                                                   
+ ====================================================================================================================================

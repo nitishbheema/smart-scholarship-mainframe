@@ -1,0 +1,18 @@
+1*********************************** STATE SCHOLARSHIP ELIGIBILITY & DISBURSEMENT SYSTEM ********************************************
+ REPORT:   BATCH RECONCILIATION AUDIT LEDGER              BATCH ID: BAT2024101    DATE: 2026-11-24   PAGE:   1                       
+0====================================================================================================================================
+ MAINFRAME BATCH EXECUTION SUMMARY & INTEGRITY CHECK:
+ ------------------------------------------------------------------------------------------------------------------------------------
+   TOTAL APPLICATION RECORDS READ (INP):                  15
+   TOTAL RECORDS PASSING SYNTACTIC VALIDATION:            12
+   TOTAL APPLICATIONS APPROVED AS ELIGIBLE:                5
+   TOTAL APPLICATIONS REJECTED / DISQUALIFIED:            10
+   TOTAL DUPLICATE SUBMISSIONS INTERCEPTED:                2
+   TOTAL FINANCIAL COMMITMENT DISBURSED (INR):    Rs.     75,000.00
+ ------------------------------------------------------------------------------------------------------------------------------------
+ SUBSYSTEM STATUS:
+   VSAM KSDS CLUSTER ACCESS (STUMAST):            STATUS CODE 00 (SUCCESS)
+   IBM Db2 SUBSYSTEM COMMIT:                      SQLCODE +000 (NORMAL COMMIT)
+   DISBURSEMENT PAYMENT ADVICE FILE:              STATUS CLOSED (CHECKSUM BALANCED)
+   FINAL STEP HIGHEST RETURN CODE:                RC 0000
+0====================================================================================================================================

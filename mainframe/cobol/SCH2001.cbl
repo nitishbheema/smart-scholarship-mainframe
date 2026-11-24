@@ -1,0 +1,155 @@
+      *****************************************************************
+      * PROGRAM:     SCH2001                                          *
+      * SYSTEM:      SMART SCHOLARSHIP ELIGIBILITY & DISBURSEMENT     *
+      * MODULE:      CONFIGURABLE SCHOLARSHIP ELIGIBILITY ENGINE      *
+      * AUTHOR:      MAINFRAME ARCHITECT & COBOL SPECIALIST           *
+      * ENVIRONMENT: IBM ENTERPRISE COBOL FOR z/OS                    *
+      * PURPOSE:     EVALUATE CANDIDATE APPLICATION AGAINST DYNAMIC   *
+      *              RULES AND COMPUTE AWARD AMOUNT SLABS.            *
+      *****************************************************************
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. SCH2001.
+       AUTHOR. SENIOR MAINFRAME DEVELOPER.
+       INSTALLATION. ENTERPRISE ACADEMIC SYSTEMS.
+       DATE-WRITTEN. 2024-10-15.
+       DATE-COMPILED. 2024-10-15.
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. IBM-ZOS.
+       OBJECT-COMPUTER. IBM-ZOS.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  WS-PROGRAM-ID               PIC X(08) VALUE 'SCH2001 '.
+
+      * --- CONFIGURATION RECORD IN WORKING STORAGE ---
+       COPY WSCONST.
+
+      * --- INTERNAL WORK VARIABLES ---
+       01  WS-CRITERIA-FLAGS.
+           05  WS-CGPA-PASS-SW         PIC X(01) VALUE 'N'.
+               88  WS-CGPA-PASS        VALUE 'Y'.
+           05  WS-ATTN-PASS-SW         PIC X(01) VALUE 'N'.
+               88  WS-ATTN-PASS        VALUE 'Y'.
+           05  WS-INCOME-PASS-SW       PIC X(01) VALUE 'N'.
+               88  WS-INCOME-PASS      VALUE 'Y'.
+           05  WS-ARREARS-PASS-SW      PIC X(01) VALUE 'N'.
+               88  WS-ARREARS-PASS     VALUE 'Y'.
+           05  WS-FAIL-COUNT           PIC 9(02) VALUE 0.
+
+       LINKAGE SECTION.
+      * --- INPUT APPLICATION ---
+       COPY SCHAPP.
+
+      * --- ELIGIBILITY EVALUATION RESULT ---
+       COPY ELIGREC.
+
+       PROCEDURE DIVISION USING SCHOLARSHIP-APP-RECORD
+                                ELIGIBILITY-RESULT-RECORD.
+
+       0000-MAIN-EVALUATION.
+           PERFORM 1000-INITIALIZE-OUTPUT
+           PERFORM 2000-POPULATE-SLABS
+           PERFORM 3000-EVALUATE-RULES
+           PERFORM 4000-DETERMINE-OUTCOME
+           GOBACK.
+
+       1000-INITIALIZE-OUTPUT.
+           INITIALIZE ELIGIBILITY-RESULT-RECORD
+           MOVE APP-ID TO ELG-APP-ID
+           MOVE APP-STU-ID TO ELG-STU-ID
+           MOVE APP-SCH-CODE TO ELG-SCH-CODE
+           MOVE APP-CGPA TO ELG-CGPA
+           MOVE APP-ATTENDANCE TO ELG-ATTENDANCE
+           MOVE APP-FAMILY-INCOME TO ELG-FAMILY-INCOME
+           MOVE APP-ACTIVE-ARREARS TO ELG-ACTIVE-ARREARS
+           MOVE ZERO TO ELG-AWARD-AMOUNT
+           MOVE 'NONE      ' TO ELG-REASON-CODE
+
+           MOVE 'N' TO WS-CGPA-PASS-SW
+           MOVE 'N' TO WS-ATTN-PASS-SW
+           MOVE 'N' TO WS-INCOME-PASS-SW
+           MOVE 'N' TO WS-ARREARS-PASS-SW
+           MOVE 0 TO WS-FAIL-COUNT.
+
+       2000-POPULATE-SLABS.
+      *    DYNAMIC SLAB TABLE INITIALIZATION FROM CONFIG
+           MOVE CFG-SLAB-1-MIN-CGPA TO CFG-SLAB-MIN-CGPA(1)
+           MOVE CFG-SLAB-1-MAX-CGPA TO CFG-SLAB-MAX-CGPA(1)
+           MOVE CFG-SLAB-1-AMOUNT   TO CFG-SLAB-AMOUNT(1)
+           MOVE CFG-SLAB-1-DESC     TO CFG-SLAB-DESC(1)
+
+           MOVE CFG-SLAB-2-MIN-CGPA TO CFG-SLAB-MIN-CGPA(2)
+           MOVE CFG-SLAB-2-MAX-CGPA TO CFG-SLAB-MAX-CGPA(2)
+           MOVE CFG-SLAB-2-AMOUNT   TO CFG-SLAB-AMOUNT(2)
+           MOVE CFG-SLAB-2-DESC     TO CFG-SLAB-DESC(2)
+
+           MOVE CFG-SLAB-3-MIN-CGPA TO CFG-SLAB-MIN-CGPA(3)
+           MOVE CFG-SLAB-3-MAX-CGPA TO CFG-SLAB-MAX-CGPA(3)
+           MOVE CFG-SLAB-3-AMOUNT   TO CFG-SLAB-AMOUNT(3)
+           MOVE CFG-SLAB-3-DESC     TO CFG-SLAB-DESC(3).
+
+       3000-EVALUATE-RULES.
+      *    1. ACADEMIC MERIT CHECK (MIN CGPA)
+           IF APP-CGPA >= CFG-MIN-CGPA
+               MOVE 'Y' TO WS-CGPA-PASS-SW
+           ELSE
+               ADD 1 TO WS-FAIL-COUNT
+           END-IF
+
+      *    2. ATTENDANCE DISCIPLINE CHECK
+           IF APP-ATTENDANCE >= CFG-MIN-ATTENDANCE
+               MOVE 'Y' TO WS-ATTN-PASS-SW
+           ELSE
+               ADD 1 TO WS-FAIL-COUNT
+           END-IF
+
+      *    3. FINANCIAL MEANS CHECK (MAX INCOME THRESHOLD)
+           IF APP-FAMILY-INCOME <= CFG-MAX-ANNUAL-INCOME
+               MOVE 'Y' TO WS-INCOME-PASS-SW
+           ELSE
+               ADD 1 TO WS-FAIL-COUNT
+           END-IF
+
+      *    4. ACTIVE ARREARS CLEARANCE CHECK
+           IF APP-ACTIVE-ARREARS <= CFG-MAX-ALLOWED-ARREARS
+               MOVE 'Y' TO WS-ARREARS-PASS-SW
+           ELSE
+               ADD 1 TO WS-FAIL-COUNT
+           END-IF.
+
+       4000-DETERMINE-OUTCOME.
+           IF WS-FAIL-COUNT = 0
+               SET ELG-STATUS-ELIGIBLE TO TRUE
+               MOVE 'NONE      ' TO ELG-REASON-CODE
+               PERFORM 4500-CALCULATE-AWARD-AMOUNT
+           ELSE
+               SET ELG-STATUS-REJECTED TO TRUE
+               MOVE ZERO TO ELG-AWARD-AMOUNT
+               EVALUATE TRUE
+                   WHEN WS-FAIL-COUNT > 1
+                       MOVE 'REJ-MULTPL' TO ELG-REASON-CODE
+                   WHEN WS-CGPA-PASS-SW = 'N'
+                       MOVE 'REJ-CGPA  ' TO ELG-REASON-CODE
+                   WHEN WS-ATTN-PASS-SW = 'N'
+                       MOVE 'REJ-ATTN  ' TO ELG-REASON-CODE
+                   WHEN WS-INCOME-PASS-SW = 'N'
+                       MOVE 'REJ-INCOME' TO ELG-REASON-CODE
+                   WHEN WS-ARREARS-PASS-SW = 'N'
+                       MOVE 'REJ-ARREAR' TO ELG-REASON-CODE
+               END-EVALUATE
+           END-IF.
+
+       4500-CALCULATE-AWARD-AMOUNT.
+      *    SLAB MATCHING LOGIC (CONFIGURABLE SLABS)
+           EVALUATE TRUE
+               WHEN APP-CGPA >= CFG-SLAB-MIN-CGPA(1)
+                   MOVE CFG-SLAB-AMOUNT(1) TO ELG-AWARD-AMOUNT
+               WHEN APP-CGPA >= CFG-SLAB-MIN-CGPA(2)
+                   MOVE CFG-SLAB-AMOUNT(2) TO ELG-AWARD-AMOUNT
+               WHEN APP-CGPA >= CFG-SLAB-MIN-CGPA(3)
+                   MOVE CFG-SLAB-AMOUNT(3) TO ELG-AWARD-AMOUNT
+               WHEN OTHER
+                   MOVE ZERO TO ELG-AWARD-AMOUNT
+           END-EVALUATE.

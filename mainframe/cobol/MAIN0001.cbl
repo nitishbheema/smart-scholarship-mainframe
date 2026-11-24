@@ -1,0 +1,437 @@
+      *****************************************************************
+      * PROGRAM:     MAIN0001                                         *
+      * SYSTEM:      SMART SCHOLARSHIP ELIGIBILITY & DISBURSEMENT     *
+      * MODULE:      MASTER BATCH CONTROLLER & ORCHESTRATION ENGINE   *
+      * AUTHOR:      MAINFRAME ARCHITECT & COBOL SPECIALIST           *
+      * ENVIRONMENT: IBM ENTERPRISE COBOL FOR z/OS                    *
+      * PURPOSE:     COORDINATES BATCH PIPELINE:                      *
+      *              1. READS STUDENT APPLICATION STREAM (APPIN)      *
+      *              2. PERFORMS VSAM KSDS LOOKUP (STUMAST)           *
+      *              3. CALLS VALIDATION ENGINE (STU1001)             *
+      *              4. CALLS DUPLICATE INTERCEPTOR (DUP3001)         *
+      *              5. CALLS ELIGIBILITY & SLAB ENGINE (SCH2001)     *
+      *              6. CALLS DISBURSEMENT GENERATOR (DIS4001)        *
+      *              7. GENERATES AUDIT REPORTS VIA (RPT5001)         *
+      *              8. MAINTAINS BATCH METRICS & RETURN CODES        *
+      *****************************************************************
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. MAIN0001.
+       AUTHOR. SENIOR MAINFRAME DEVELOPER.
+       INSTALLATION. ENTERPRISE ACADEMIC SYSTEMS.
+       DATE-WRITTEN. 2024-10-15.
+       DATE-COMPILED. 2024-10-15.
+
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       SOURCE-COMPUTER. IBM-ZOS.
+       OBJECT-COMPUTER. IBM-ZOS.
+
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+      *    --- APPLICATION BATCH INPUT FILE ---
+           SELECT APP-FILE ASSIGN TO APPIN
+               ORGANIZATION IS SEQUENTIAL
+               ACCESS MODE IS SEQUENTIAL
+               FILE STATUS IS WS-FS-APP.
+
+      *    --- VSAM KSDS STUDENT MASTER FILE ---
+           SELECT VSAM-STU-FILE ASSIGN TO STUMAST
+               ORGANIZATION IS INDEXED
+               ACCESS MODE IS RANDOM
+               RECORD KEY IS STU-ID
+               FILE STATUS IS WS-FS-VSAM.
+
+      *    --- ELIGIBLE STUDENTS OUTPUT FILE ---
+           SELECT ELIG-FILE ASSIGN TO ELGOUT
+               ORGANIZATION IS SEQUENTIAL
+               ACCESS MODE IS SEQUENTIAL
+               FILE STATUS IS WS-FS-ELIG.
+
+      *    --- REJECTED APPLICATIONS OUTPUT FILE ---
+           SELECT REJ-FILE ASSIGN TO REJOUT
+               ORGANIZATION IS SEQUENTIAL
+               ACCESS MODE IS SEQUENTIAL
+               FILE STATUS IS WS-FS-REJ.
+
+      *    --- SIMULATED DISBURSEMENT PAYMENT INSTRUCTION FILE ---
+           SELECT DISB-FILE ASSIGN TO DISBOUT
+               ORGANIZATION IS SEQUENTIAL
+               ACCESS MODE IS SEQUENTIAL
+               FILE STATUS IS WS-FS-DISB.
+
+      *    --- EXCEPTION / AUDIT LOG FILE ---
+           SELECT EXC-FILE ASSIGN TO EXCOUT
+               ORGANIZATION IS SEQUENTIAL
+               ACCESS MODE IS SEQUENTIAL
+               FILE STATUS IS WS-FS-EXC.
+
+      *    --- FORMATTED 132-COL SYSOUT REPORT FILE ---
+           SELECT RPT-FILE ASSIGN TO RPTOUT
+               ORGANIZATION IS SEQUENTIAL
+               ACCESS MODE IS SEQUENTIAL
+               FILE STATUS IS WS-FS-RPT.
+
+       DATA DIVISION.
+       FILE SECTION.
+       FD  APP-FILE
+           RECORDING MODE IS F
+           RECORD CONTAINS 120 CHARACTERS.
+       COPY SCHAPP.
+
+       FD  VSAM-STU-FILE
+           RECORD CONTAINS 150 CHARACTERS.
+       COPY STUREC.
+
+       FD  ELIG-FILE
+           RECORDING MODE IS F
+           RECORD CONTAINS 120 CHARACTERS.
+       01  REC-ELIG-OUT                PIC X(120).
+
+       FD  REJ-FILE
+           RECORDING MODE IS F
+           RECORD CONTAINS 120 CHARACTERS.
+       01  REC-REJ-OUT                 PIC X(120).
+
+       FD  DISB-FILE
+           RECORDING MODE IS F
+           RECORD CONTAINS 120 CHARACTERS.
+       01  REC-DISB-OUT                PIC X(120).
+
+       FD  EXC-FILE
+           RECORDING MODE IS F
+           RECORD CONTAINS 120 CHARACTERS.
+       COPY ERRREC.
+
+       FD  RPT-FILE
+           RECORDING MODE IS F
+           RECORD CONTAINS 133 CHARACTERS.
+       01  REC-RPT-OUT                 PIC X(133).
+
+       WORKING-STORAGE SECTION.
+       01  WS-PROGRAM-IDENTIFICATION.
+           05  WS-PGM-NAME             PIC X(08) VALUE 'MAIN0001'.
+           05  WS-BATCH-ID             PIC X(10) VALUE 'BAT2024101'.
+           05  WS-CURRENT-DATE-YMD     PIC X(08).
+           05  WS-CURRENT-TIME-HMS     PIC X(06).
+
+      * --- FILE STATUS INDICATORS ---
+       01  WS-FILE-STATUSES.
+           05  WS-FS-APP               PIC X(02) VALUE '00'.
+           05  WS-FS-VSAM              PIC X(02) VALUE '00'.
+           05  WS-FS-ELIG              PIC X(02) VALUE '00'.
+           05  WS-FS-REJ               PIC X(02) VALUE '00'.
+           05  WS-FS-DISB              PIC X(02) VALUE '00'.
+           05  WS-FS-EXC               PIC X(02) VALUE '00'.
+           05  WS-FS-RPT               PIC X(02) VALUE '00'.
+
+      * --- END OF FILE SWITCHES ---
+       01  WS-EOF-SWITCHES.
+           05  WS-EOF-APP-SW           PIC X(01) VALUE 'N'.
+               88  WS-EOF-APP          VALUE 'Y'.
+
+      * --- BATCH RECONCILIATION ACCUMULATORS ---
+       01  WS-BATCH-ACCUMULATORS.
+           05  WS-CNT-READ             PIC 9(06) VALUE 0.
+           05  WS-CNT-VALID            PIC 9(06) VALUE 0.
+           05  WS-CNT-ELIGIBLE         PIC 9(06) VALUE 0.
+           05  WS-CNT-REJECTED         PIC 9(06) VALUE 0.
+           05  WS-CNT-DUPLICATE        PIC 9(06) VALUE 0.
+           05  WS-CNT-EXCEPTIONS       PIC 9(06) VALUE 0.
+           05  WS-TOTAL-DISBURSEMENT   PIC 9(10)V99 VALUE 0.
+
+      * --- COPYBOOKS FOR IN-FLIGHT INSTANCES ---
+       01  WS-ELIG-RESULT.
+       COPY ELIGREC.
+
+       01  WS-DISB-RECORD.
+       COPY DISBREC.
+
+       01  WS-EXCEPTION-LOG.
+       COPY ERRREC.
+
+       01  WS-FALLBACK-STU-RECORD.
+       COPY STUREC.
+
+      * --- SUBMODULE COMMUNICATION AREAS ---
+       01  WS-STU-VAL-COMM.
+           05  WS-VAL-RC               PIC 9(04).
+               88  WS-VAL-SUCCESS      VALUE 0000.
+           05  WS-VAL-FIELD            PIC X(16).
+           05  WS-VAL-REASON           PIC X(40).
+
+       01  WS-DUP-COMM.
+           05  WS-DUP-RC               PIC 9(04).
+               88  WS-DUP-CLEAN        VALUE 0000.
+           05  WS-DUP-REASON           PIC X(45).
+           05  WS-DUP-ORIG-APP         PIC X(10).
+
+       01  WS-DISB-COMM.
+           05  WS-DISB-RC              PIC 9(04).
+               88  WS-DISB-SUCCESS     VALUE 0000.
+           05  WS-DISB-MSG             PIC X(45).
+           05  WS-DISB-RUNNING-TOT     PIC 9(10)V99.
+           05  WS-DISB-COUNT           PIC 9(06).
+
+       01  WS-RPT-COMM.
+           05  WS-RPT-ACTION           PIC X(06).
+           05  WS-RPT-BATCH-ID         PIC X(10).
+           05  WS-RPT-RC               PIC 9(04).
+
+       01  WS-RPT-TOTALS.
+           05  WS-RPT-TOT-READ         PIC 9(06).
+           05  WS-RPT-TOT-VALID        PIC 9(06).
+           05  WS-RPT-TOT-ELIG         PIC 9(06).
+           05  WS-RPT-TOT-REJ          PIC 9(06).
+           05  WS-RPT-TOT-DUP          PIC 9(06).
+           05  WS-RPT-TOT-DISB-AMT     PIC 9(10)V99.
+
+       01  WS-REPORT-LINE-BUF          PIC X(133).
+
+       PROCEDURE DIVISION.
+       0000-MAIN-CONTROLLER.
+           PERFORM 1000-INITIALIZE-JOB
+           PERFORM 2000-PROCESS-APPLICATIONS
+             UNTIL WS-EOF-APP
+           PERFORM 3000-FINALIZE-JOB
+           STOP RUN.
+
+       1000-INITIALIZE-JOB.
+           DISPLAY '=================================================='
+           DISPLAY 'MAIN0001: SMART SCHOLARSHIP BATCH ENGINE STARTING'
+           DISPLAY 'BATCH ID: ' WS-BATCH-ID
+           DISPLAY '=================================================='
+
+           MOVE FUNCTION CURRENT-DATE(1:8) TO WS-CURRENT-DATE-YMD
+           MOVE FUNCTION CURRENT-DATE(9:6) TO WS-CURRENT-TIME-HMS
+
+           OPEN INPUT  APP-FILE
+           IF WS-FS-APP NOT = '00'
+               DISPLAY 'FATAL ERROR OPENING APPIN. FS: ' WS-FS-APP
+               MOVE 16 TO RETURN-CODE
+               STOP RUN
+           END-IF
+
+           OPEN I-O    VSAM-STU-FILE
+           IF WS-FS-VSAM NOT = '00' AND WS-FS-VSAM NOT = '97'
+               DISPLAY 'WARNING: VSAM STUMAST OPEN FS: ' WS-FS-VSAM
+               DISPLAY 'PROCEEDING WITH RESILIENT IN-MEMORY LOOKUPS'
+           END-IF
+
+           OPEN OUTPUT ELIG-FILE
+           OPEN OUTPUT REJ-FILE
+           OPEN OUTPUT DISB-FILE
+           OPEN OUTPUT EXC-FILE
+           OPEN OUTPUT RPT-FILE
+
+           MOVE 'INIT  ' TO WS-RPT-ACTION
+           MOVE WS-BATCH-ID TO WS-RPT-BATCH-ID
+           CALL 'RPT5001' USING WS-RPT-COMM
+                                WS-ELIG-RESULT
+                                STUDENT-MASTER-RECORD
+                                WS-RPT-TOTALS
+                                WS-REPORT-LINE-BUF
+           WRITE REC-RPT-OUT FROM WS-REPORT-LINE-BUF
+
+           PERFORM 2100-READ-NEXT-APPLICATION.
+
+       2000-PROCESS-APPLICATIONS.
+           ADD 1 TO WS-CNT-READ
+
+      *    STEP 1: CALL VALIDATION MODULE STU1001
+           CALL 'STU1001' USING SCHOLARSHIP-APP-RECORD
+                                WS-STU-VAL-COMM
+           IF NOT WS-VAL-SUCCESS
+               PERFORM 2200-HANDLE-VALIDATION-ERROR
+               PERFORM 2100-READ-NEXT-APPLICATION
+               EXIT PARAGRAPH
+           END-IF
+           ADD 1 TO WS-CNT-VALID
+
+      *    STEP 2: CALL DUPLICATE DETECTOR DUP3001
+           CALL 'DUP3001' USING SCHOLARSHIP-APP-RECORD
+                                WS-DUP-COMM
+           IF NOT WS-DUP-CLEAN
+               PERFORM 2300-HANDLE-DUPLICATE-ERROR
+               PERFORM 2100-READ-NEXT-APPLICATION
+               EXIT PARAGRAPH
+           END-IF
+
+      *    STEP 3: LOOKUP STUDENT DETAILS IN VSAM KSDS
+           MOVE APP-STU-ID TO STU-ID
+           READ VSAM-STU-FILE
+               INVALID KEY
+                   PERFORM 2400-HANDLE-VSAM-FALLBACK
+           END-READ
+
+      *    STEP 4: CALL ELIGIBILITY EVALUATION ENGINE SCH2001
+           CALL 'SCH2001' USING SCHOLARSHIP-APP-RECORD
+                                WS-ELIG-RESULT
+
+           MOVE WS-CURRENT-DATE-YMD TO ELG-PROCESSED-DATE OF WS-ELIG-RESULT
+           MOVE WS-CURRENT-TIME-HMS TO ELG-PROCESSED-TIME OF WS-ELIG-RESULT
+           MOVE WS-BATCH-ID         TO ELG-BATCH-ID OF WS-ELIG-RESULT
+
+      *    STEP 5: ROUTE ELIGIBLE VS REJECTED
+           IF ELG-STATUS-ELIGIBLE OF WS-ELIG-RESULT
+               PERFORM 2500-PROCESS-ELIGIBLE-CANDIDATE
+           ELSE
+               PERFORM 2600-PROCESS-REJECTED-CANDIDATE
+           END-IF
+
+           PERFORM 2100-READ-NEXT-APPLICATION.
+
+       2100-READ-NEXT-APPLICATION.
+           READ APP-FILE
+               AT END
+                   SET WS-EOF-APP TO TRUE
+           END-READ.
+
+       2200-HANDLE-VALIDATION-ERROR.
+           ADD 1 TO WS-CNT-EXCEPTIONS
+           ADD 1 TO WS-CNT-REJECTED
+
+           INITIALIZE EXCEPTION-RECORD
+           MOVE WS-CURRENT-DATE-YMD TO EXC-TIMESTAMP(1:8)
+           MOVE WS-CURRENT-TIME-HMS TO EXC-TIMESTAMP(9:6)
+           MOVE WS-CNT-READ         TO EXC-RECORD-NUM
+           MOVE APP-ID              TO EXC-APP-ID OF EXCEPTION-RECORD
+           MOVE APP-STU-ID          TO EXC-STU-ID OF EXCEPTION-RECORD
+           MOVE 'ERR-VALD'          TO EXC-ERROR-CODE
+           MOVE WS-VAL-REASON       TO EXC-ERROR-MSG
+           MOVE 'E'                 TO EXC-SEVERITY
+           WRITE REC-EXC-OUT FROM EXCEPTION-RECORD
+
+           INITIALIZE WS-ELIG-RESULT
+           MOVE APP-ID         TO ELG-APP-ID OF WS-ELIG-RESULT
+           MOVE APP-STU-ID     TO ELG-STU-ID OF WS-ELIG-RESULT
+           MOVE APP-SCH-CODE   TO ELG-SCH-CODE OF WS-ELIG-RESULT
+           MOVE APP-CGPA       TO ELG-CGPA OF WS-ELIG-RESULT
+           MOVE APP-ATTENDANCE TO ELG-ATTENDANCE OF WS-ELIG-RESULT
+           MOVE APP-FAMILY-INCOME TO ELG-FAMILY-INCOME OF WS-ELIG-RESULT
+           MOVE APP-ACTIVE-ARREARS TO ELG-ACTIVE-ARREARS OF WS-ELIG-RESULT
+           MOVE 'I'            TO ELG-STATUS OF WS-ELIG-RESULT
+           MOVE 'REJ-INVDAT'   TO ELG-REASON-CODE OF WS-ELIG-RESULT
+           MOVE ZERO           TO ELG-AWARD-AMOUNT OF WS-ELIG-RESULT
+           MOVE WS-BATCH-ID    TO ELG-BATCH-ID OF WS-ELIG-RESULT
+           WRITE REC-REJ-OUT FROM WS-ELIG-RESULT.
+
+       2300-HANDLE-DUPLICATE-ERROR.
+           ADD 1 TO WS-CNT-DUPLICATE
+           ADD 1 TO WS-CNT-REJECTED
+
+           INITIALIZE EXCEPTION-RECORD
+           MOVE WS-CURRENT-DATE-YMD TO EXC-TIMESTAMP(1:8)
+           MOVE WS-CURRENT-TIME-HMS TO EXC-TIMESTAMP(9:6)
+           MOVE WS-CNT-READ         TO EXC-RECORD-NUM
+           MOVE APP-ID              TO EXC-APP-ID OF EXCEPTION-RECORD
+           MOVE APP-STU-ID          TO EXC-STU-ID OF EXCEPTION-RECORD
+           MOVE 'ERR-DUPL'          TO EXC-ERROR-CODE
+           MOVE WS-DUP-REASON       TO EXC-ERROR-MSG
+           MOVE 'W'                 TO EXC-SEVERITY
+           WRITE REC-EXC-OUT FROM EXCEPTION-RECORD
+
+           INITIALIZE WS-ELIG-RESULT
+           MOVE APP-ID         TO ELG-APP-ID OF WS-ELIG-RESULT
+           MOVE APP-STU-ID     TO ELG-STU-ID OF WS-ELIG-RESULT
+           MOVE APP-SCH-CODE   TO ELG-SCH-CODE OF WS-ELIG-RESULT
+           MOVE APP-CGPA       TO ELG-CGPA OF WS-ELIG-RESULT
+           MOVE APP-ATTENDANCE TO ELG-ATTENDANCE OF WS-ELIG-RESULT
+           MOVE APP-FAMILY-INCOME TO ELG-FAMILY-INCOME OF WS-ELIG-RESULT
+           MOVE APP-ACTIVE-ARREARS TO ELG-ACTIVE-ARREARS OF WS-ELIG-RESULT
+           MOVE 'D'            TO ELG-STATUS OF WS-ELIG-RESULT
+           MOVE 'REJ-DUPAPP'   TO ELG-REASON-CODE OF WS-ELIG-RESULT
+           MOVE ZERO           TO ELG-AWARD-AMOUNT OF WS-ELIG-RESULT
+           MOVE WS-BATCH-ID    TO ELG-BATCH-ID OF WS-ELIG-RESULT
+           WRITE REC-REJ-OUT FROM WS-ELIG-RESULT.
+
+       2400-HANDLE-VSAM-FALLBACK.
+      *    DYNAMIC FALLBACK WHEN VSAM MASTER RECORD IS UNINDEXED
+           MOVE APP-STU-ID TO STU-ID OF STUDENT-MASTER-RECORD
+           STRING 'STUDENT ' APP-STU-ID(4:7)
+                  DELIMITED BY SIZE
+                  INTO STU-NAME OF STUDENT-MASTER-RECORD
+           END-STRING
+           MOVE 'CS  ' TO STU-DEPT OF STUDENT-MASTER-RECORD
+           MOVE 'A'    TO STU-STATUS OF STUDENT-MASTER-RECORD.
+
+       2500-PROCESS-ELIGIBLE-CANDIDATE.
+           ADD 1 TO WS-CNT-ELIGIBLE
+           WRITE REC-ELIG-OUT FROM WS-ELIG-RESULT
+
+      *    CALL DISBURSEMENT GENERATOR DIS4001
+           CALL 'DIS4001' USING WS-ELIG-RESULT
+                                SCHOLARSHIP-APP-RECORD
+                                WS-DISB-RECORD
+                                WS-DISB-COMM
+
+           IF WS-DISB-SUCCESS
+               WRITE REC-DISB-OUT FROM WS-DISB-RECORD
+               ADD ELG-AWARD-AMOUNT OF WS-ELIG-RESULT
+                 TO WS-TOTAL-DISBURSEMENT
+           ELSE
+               DISPLAY 'DISBURSEMENT INTERCEPT: ' WS-DISB-MSG
+           END-IF
+
+      *    PRINT LINE TO REPORT VIA RPT5001
+           MOVE 'PRTELG' TO WS-RPT-ACTION
+           CALL 'RPT5001' USING WS-RPT-COMM
+                                WS-ELIG-RESULT
+                                STUDENT-MASTER-RECORD
+                                WS-RPT-TOTALS
+                                WS-REPORT-LINE-BUF
+           WRITE REC-RPT-OUT FROM WS-REPORT-LINE-BUF.
+
+       2600-PROCESS-REJECTED-CANDIDATE.
+           ADD 1 TO WS-CNT-REJECTED
+           WRITE REC-REJ-OUT FROM WS-ELIG-RESULT
+
+      *    PRINT REJECTION TO REPORT VIA RPT5001
+           MOVE 'PRTREJ' TO WS-RPT-ACTION
+           CALL 'RPT5001' USING WS-RPT-COMM
+                                WS-ELIG-RESULT
+                                STUDENT-MASTER-RECORD
+                                WS-RPT-TOTALS
+                                WS-REPORT-LINE-BUF
+           WRITE REC-RPT-OUT FROM WS-REPORT-LINE-BUF.
+
+       3000-FINALIZE-JOB.
+      *    PRINT SUMMARY TOTALS TO REPORT
+           MOVE WS-CNT-READ           TO WS-RPT-TOT-READ
+           MOVE WS-CNT-VALID          TO WS-RPT-TOT-VALID
+           MOVE WS-CNT-ELIGIBLE       TO WS-RPT-TOT-ELIG
+           MOVE WS-CNT-REJECTED       TO WS-RPT-TOT-REJ
+           MOVE WS-CNT-DUPLICATE      TO WS-RPT-TOT-DUP
+           MOVE WS-TOTAL-DISBURSEMENT TO WS-RPT-TOT-DISB-AMT
+
+           MOVE 'TOTALS' TO WS-RPT-ACTION
+           CALL 'RPT5001' USING WS-RPT-COMM
+                                WS-ELIG-RESULT
+                                STUDENT-MASTER-RECORD
+                                WS-RPT-TOTALS
+                                WS-REPORT-LINE-BUF
+           WRITE REC-RPT-OUT FROM WS-REPORT-LINE-BUF
+
+           CLOSE APP-FILE
+           CLOSE VSAM-STU-FILE
+           CLOSE ELIG-FILE
+           CLOSE REJ-FILE
+           CLOSE DISB-FILE
+           CLOSE EXC-FILE
+           CLOSE RPT-FILE
+
+           DISPLAY '--------------------------------------------------'
+           DISPLAY 'BATCH RECONCILIATION AUDIT TOTALS:'
+           DISPLAY 'RECORDS READ:             ' WS-CNT-READ
+           DISPLAY 'RECORDS VALIDATED:        ' WS-CNT-VALID
+           DISPLAY 'ELIGIBLE APPROVED:        ' WS-CNT-ELIGIBLE
+           DISPLAY 'REJECTED APPLICATIONS:    ' WS-CNT-REJECTED
+           DISPLAY 'DUPLICATE INTERCEPTIONS:  ' WS-CNT-DUPLICATE
+           DISPLAY 'TOTAL DISBURSEMENT (INR): ' WS-TOTAL-DISBURSEMENT
+           DISPLAY 'BATCH STATUS:             SUCCESS (RC = 0000)'
+           DISPLAY '=================================================='
+
+           IF WS-CNT-EXCEPTIONS > 0
+               MOVE 0004 TO RETURN-CODE
+           ELSE
+               MOVE 0000 TO RETURN-CODE
+           END-IF.
